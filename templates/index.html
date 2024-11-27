@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sensor Data</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Default light mode styles */
+        body {
+            background-color: #fff;
+            color: #000;
+            font-family: Arial, sans-serif;
+        }
+
+        .chart-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            width: 100%;
+            margin: auto;
+        }
+
+        canvas {
+            width: 100%;
+            max-width: 600px;
+            height: 400px;
+            margin: 10px;
+        }
+
+        /* Dark mode styles */
+        body.dark-mode {
+            background-color: #333;
+            color: #fff;
+        }
+
+        body.dark-mode .chart-container {
+            background-color: #444;
+        }
+
+        body.dark-mode button {
+            background-color: #555;
+            color: #fff;
+        }
+
+        button {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            background-color: #f1f1f1;
+            color: #000;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Dark mode toggle button -->
+    <button id="darkModeToggle">Enable Dark Mode</button>
+
+    <h1>Sensor Data ({{ recent_date }})</h1>
+
+    <div class="chart-container">
+        <!-- Temperature Chart -->
+        <canvas id="temperatureChart"></canvas>
+
+        <!-- Humidity Chart -->
+        <canvas id="humidityChart"></canvas>
+
+        <!-- Soil Moisture Chart (newly added) -->
+        <canvas id="soilMoistureChart"></canvas>
+    </div>
+
+    <script>
+        // Reverse the order of data points to show the newest data on the right
+        var timestampsReversed = {{ timestamps | tojson }}.reverse();
+        var temperaturesReversed = {{ temperatures | tojson }}.reverse();
+        var humiditiesReversed = {{ humidities | tojson }}.reverse();
+        var soilMoisturesReversed = {{ soil_moistures | tojson }}.reverse();
+
+        // Temperature Chart
+        var ctxTemp = document.getElementById('temperatureChart').getContext('2d');
+        var temperatureChart = new Chart(ctxTemp, {
+            type: 'line',
+            data: {
+                labels: timestampsReversed,  // Use reversed timestamps
+                datasets: [
+                    {
+                        label: 'Temperature (°C) Below 0°C',
+                        data: temperaturesReversed.map(temp => (temp < 0 ? temp : null)),  // Only show values below 0
+                        borderColor: 'rgb(0, 0, 255)',  // Blue line for below 0°C
+                        backgroundColor: 'rgba(0, 0, 255, 0.2)',  // Light blue fill
+                        fill: true  // Enable filling below the line
+                    },
+                    {
+                        label: 'Temperature (°C) Above 0°C',
+                        data: temperaturesReversed.map(temp => (temp >= 0 ? temp : null)),  // Only show values above 0
+                        borderColor: 'rgb(255, 99, 132)',  // Original color for above 0°C
+                        backgroundColor: 'rgba(255, 255, 204, 0.2)',  // Light yellow fill for above 0°C
+                        fill: true  // Enable filling above the line
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        min: -10,  // Set the min value for the temperature chart to -10°C
+                        max: 40,  // Set the max value for the temperature chart to 40°C
+                        beginAtZero: false
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',  // Top-right legend
+                        align: 'end'
+                    }
+                }
+            }
+        });
+
+        // Humidity Chart
+        var ctxHum = document.getElementById('humidityChart').getContext('2d');
+        var humidityChart = new Chart(ctxHum, {
+            type: 'line',
+            data: {
+                labels: timestampsReversed,  // Use reversed timestamps
+                datasets: [{
+                    label: 'Humidity (%)',
+                    data: humiditiesReversed,  // Use reversed humidity data
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(173, 216, 230, 0.3)',  // Light blue background
+                    fill: true  // Enable filling under the line to show background color
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        max: 100,  // Set the max value of the humidity graph to 100
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',  // Top-right legend
+                        align: 'end'
+                    }
+                }
+            }
+        });
+
+        // Soil Moisture Chart (newly added)
+        var ctxSoil = document.getElementById('soilMoistureChart').getContext('2d');
+        var soilMoistureChart = new Chart(ctxSoil, {
+            type: 'line',
+            data: {
+                labels: timestampsReversed,  // Use reversed timestamps
+                datasets: [{
+                    label: 'Soil Moisture (%)',
+                    data: soilMoisturesReversed,  // Use reversed soil moisture data
+                    borderColor: 'rgb(75, 192, 192)',  // Light greenish color for soil moisture
+                    backgroundColor: 'rgba(75, 192, 192, 0.3)',  // Light greenish fill
+                    fill: true  // Enable filling under the line to show background color
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        max: 100,  // Set the max value for soil moisture chart to 100%
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',  // Top-right legend
+                        align: 'end'
+                    }
+                }
+            }
+        });
+
+        // Toggle Dark Mode on button click
+        const toggleButton = document.getElementById('darkModeToggle');
+        const currentMode = localStorage.getItem('darkMode') === 'enabled';
+
+        // If dark mode was previously enabled, apply it
+        if (currentMode) {
+            document.body.classList.add('dark-mode');
+            toggleButton.textContent = 'Disable Dark Mode';
+        }
+
+        // Add event listener to toggle dark mode
+        toggleButton.addEventListener('click', function() {
+            document.body.classList.toggle('dark-mode');
+            // Save the user's preference in localStorage
+            if (document.body.classList.contains('dark-mode')) {
+                localStorage.setItem('darkMode', 'enabled');
+                toggleButton.textContent = 'Disable Dark Mode';
+            } else {
+                localStorage.setItem('darkMode', 'disabled');
+                toggleButton.textContent = 'Enable Dark Mode';
+            }
+        });
+    </script>
+</body>
+</html>
