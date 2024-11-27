@@ -30,7 +30,9 @@ cd PiGarden
 ```
 
 Install the required Python packages:
+```
 pip install -r requirements.txt
+```
 
 3. Set up the Database
 Run the script to initialize the SQLite database and create the table that will store sensor data.
