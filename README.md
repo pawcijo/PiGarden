@@ -36,7 +36,9 @@ pip install -r requirements.txt
 
 3. Set up the Database
 Run the script to initialize the SQLite database and create the table that will store sensor data.
+```
 python init_db.py
+```
 This will create a sensor_data.db file with the necessary structure.
 
 4. Connect Sensors
