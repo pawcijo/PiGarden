@@ -3,10 +3,36 @@ import smbus
 import time
 import threading
 from flask import Flask, render_template
-from datetime import datetime
+from datetime import datetime, time as dtime
 import pytz
+import RPi.GPIO as GPIO
 
 app = Flask(__name__)
+
+# Configuration variables
+ADC_ADDRESS = 0x48  # I2C address for ADC
+ADC_CHANNEL = 0  # ADC channel for soil moisture
+SHT31_ADDRESS = 0x44  # I2C address for SHT31-D sensor
+SLEEP_INTERVAL_DATA_PUSH = 3600  # Interval to push data to the database (in seconds)
+SLEEP_INTERVAL_LIGHT_CONTROL = 60  # Interval to check light status (in seconds)
+LIGHT_ON_HOUR = 23  # Hour to turn lights on (24-hour format)
+LIGHT_ON_MINUTE = 50  # Minute to turn lights on
+LIGHT_OFF_HOUR = 8  # Hour to turn lights off (24-hour format)
+LIGHT_OFF_MINUTE = 0  # Minute to turn lights off
+TIMEZONE = "Europe/Warsaw"  # Timezone for local time
+TEMP_COMMAND = [0x2C, 0x06]  # Command to read temperature and humidity from SHT31-D
+RELAY_CHANNEL = 9  # GPIO pin for the relay controlling the lights
+
+# GPIO setup
+GPIO.setwarnings(False)
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(RELAY_CHANNEL, GPIO.OUT)
+
+# Turn off lights initially
+GPIO.output(RELAY_CHANNEL, GPIO.HIGH)
+
+# Variable to store the current light status
+light_status = "OFF"
 
 # Initialize SQLite Database
 def init_db():
@@ -25,46 +51,50 @@ def init_db():
     conn.close()
 
 # Function to read soil moisture from ADC
-def read_soil_moisture(channel, adc_address=0x48):
-    """
-    Reads soil moisture value from the ADC.
-    :param channel: ADC channel to read (0-7).
-    :param adc_address: I2C address of the ADC.
-    :return: Soil moisture percentage (0-100%).
-    """
+def read_soil_moisture(channel, adc_address=ADC_ADDRESS):
     bus = smbus.SMBus(1)
     assert 0 <= channel <= 7, "Invalid ADC channel. Must be between 0 and 7."
-    command = 0x84 | (channel << 4)  # ADC channel selection command
+    command = 0x84 | (channel << 4)
     bus.write_byte(adc_address, command)
-    adc_value = bus.read_byte(adc_address)  # Read raw ADC value (0-255)
-    
-    # Convert ADC value to percentage
+    adc_value = bus.read_byte(adc_address)
     soil_moisture = (adc_value / 255.0) * 100
     return soil_moisture
+
+# Function to control lights based on specific hours
+def control_lights():
+    global light_status
+    while True:
+        try:
+            local_time = datetime.now(pytz.timezone(TIMEZONE)).time()
+            light_on_time = dtime(LIGHT_ON_HOUR, LIGHT_ON_MINUTE)
+            light_off_time = dtime(LIGHT_OFF_HOUR, LIGHT_OFF_MINUTE)
+
+            if light_on_time <= local_time or local_time < light_off_time:
+                GPIO.output(RELAY_CHANNEL, GPIO.LOW)  # Turn light ON
+                light_status = "ON"
+            else:
+                GPIO.output(RELAY_CHANNEL, GPIO.HIGH)  # Turn light OFF
+                light_status = "OFF"
+        except Exception as e:
+            print(f"Error controlling lights: {e}")
+        time.sleep(SLEEP_INTERVAL_LIGHT_CONTROL)
 
 # Function to push sensor data to the database every hour
 def push_data():
     while True:
         try:
-            # Read temperature and humidity from SHT31-D
             bus = smbus.SMBus(1)
-            sht31_address = 0x44
-            bus.write_i2c_block_data(sht31_address, 0x2C, [0x06])
+            bus.write_i2c_block_data(SHT31_ADDRESS, TEMP_COMMAND[0], [TEMP_COMMAND[1]])
             time.sleep(0.5)
-            data = bus.read_i2c_block_data(sht31_address, 0x00, 6)
+            data = bus.read_i2c_block_data(SHT31_ADDRESS, 0x00, 6)
 
             if len(data) == 6:
                 temp = data[0] * 256 + data[1]
                 cTemp = -45 + (175 * temp / 65535.0)
                 humidity = 100 * (data[3] * 256 + data[4]) / 65535.0
+                soil_moisture = read_soil_moisture(ADC_CHANNEL)
+                local_time = datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d %H:%M:%S")
 
-                # Read soil moisture from ADC channel 0
-                soil_moisture = read_soil_moisture(0)
-
-                # Get current local time
-                local_time = datetime.now(pytz.timezone("Europe/Warsaw")).strftime("%Y-%m-%d %H:%M:%S")
-
-                # Insert data into database with local timestamp
                 conn = sqlite3.connect("sensor_data.db")
                 cursor = conn.cursor()
                 cursor.execute(
@@ -74,17 +104,20 @@ def push_data():
                 conn.commit()
                 conn.close()
         except Exception as e:
-            print(f"Error occurred: {e}")  # Print the error for debugging purposes
-
-        # Wait for 1 hour before pushing data again
-        time.sleep(3600)
+            print(f"Error occurred: {e}")
+        time.sleep(SLEEP_INTERVAL_DATA_PUSH)
 
 # Start the background data pushing in a separate thread
-thread = threading.Thread(target=push_data)
-thread.daemon = True  # Ensures the thread stops when the program stops
-thread.start()
+data_thread = threading.Thread(target=push_data)
+data_thread.daemon = True
+data_thread.start()
 
-# Route to display sensor data
+# Start the background light control in a separate thread
+light_thread = threading.Thread(target=control_lights)
+light_thread.daemon = True
+light_thread.start()
+
+# Route to display sensor data and light status
 @app.route("/")
 def index():
     conn = sqlite3.connect("sensor_data.db")
@@ -93,21 +126,16 @@ def index():
     rows = cursor.fetchall()
     conn.close()
 
-    # Use timestamps as they are (no conversion)
     timestamps = []
     for row in rows:
-        # Parse the timestamp from the database (assumed to be in Europe/Warsaw timezone)
         timestamp = datetime.strptime(row[0], "%Y-%m-%d %H:%M:%S")
-
-        # Format to show only hour and minute (HH:MM)
         timestamps.append(timestamp.strftime("%H:%M"))
 
     temperatures = [row[1] for row in rows]
     humidities = [row[2] for row in rows]
     soil_moistures = [row[3] for row in rows]
 
-    # Get current date in local timezone
-    local_timezone = pytz.timezone("Europe/Warsaw")
+    local_timezone = pytz.timezone(TIMEZONE)
     recent_date = datetime.now(local_timezone).strftime("%Y-%m-%d")
 
     return render_template(
@@ -116,9 +144,13 @@ def index():
         temperatures=temperatures,
         humidities=humidities,
         soil_moistures=soil_moistures,
-        recent_date=recent_date
+        recent_date=recent_date,
+        light_status=light_status
     )
 
 if __name__ == "__main__":
-    init_db()
-    app.run(debug=False, host="0.0.0.0", port=5000)
+    try:
+        init_db()
+        app.run(debug=False, host="0.0.0.0", port=5000)
+    finally:
+        GPIO.cleanup()

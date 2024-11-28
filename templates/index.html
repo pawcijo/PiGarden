@@ -54,6 +54,12 @@
             color: #000;
             font-size: 16px;
         }
+
+        .light-status {
+            margin-top: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -61,6 +67,11 @@
     <button id="darkModeToggle">Enable Dark Mode</button>
 
     <h1>Sensor Data ({{ recent_date }})</h1>
+
+    <!-- Light Status Display -->
+    <div class="light-status">
+        <p>Light Status: <span id="lightStatus">{{ light_status }}</span></p>
+    </div>
 
     <div class="chart-container">
         <!-- Temperature Chart -->

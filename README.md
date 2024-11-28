@@ -42,9 +42,29 @@ python init_db.py
 This will create a sensor_data.db file with the necessary structure.
 
 4. Connect Sensors
-Connect the SHT31-D sensor and soil moisture sensor to your Raspberry Pi using the I2C interface:
-- SHT31-D should be connected to I2C address 0x44.
-- Soil moisture sensor should be connected to I2C address 0x48.
+Connect the SHT31-D sensor and SEN0193 soil moisture sensor to your Raspberry Pi.
+SHT31-D Sensor:
+
+    I2C address: 0x44
+    Ensure the wiring is correct:
+        SDA to GPIO 2 (pin 3)
+        SCL to GPIO 3 (pin 5)
+        VCC to 3.3V
+        GND to GND
+
+SEN0193 Soil Moisture Sensor with ADS7830:
+
+    The SEN0193 sensor outputs an analog voltage proportional to the soil moisture level.
+    Use the ADS7830 ADC to convert the analog signal into a digital value for the Raspberry Pi.
+    ADS7830 wiring:
+        VCC to 3.3V or 5V.
+        GND to GND.
+        SDA to GPIO 2 (pin 3).
+        SCL to GPIO 3 (pin 5).
+    SEN0193 wiring:
+        VCC to 3.3V.
+        GND to GND.
+        Signal (analog output) to one of the ADC input channels on the ADS7830 (e.g., CH0)
 
 Ensure the wiring is correct:
 - SDA to GPIO 2 (pins 3)
