@@ -11,7 +11,8 @@ PiGarden is a simple web-based application that allows you to monitor environmen
 #  Components
 - Raspberry Pi: The main platform that reads sensor data via I2C.
 - SHT31-D Sensor: Measures temperature and humidity.
-- Soil Moisture Sensor: Measures the moisture level of the soil (connected via I2C address 0x48).
+- SEN0193 Soil Moisture Sensor: An analog sensor that measures the moisture level of the soil.
+- ADS7830 ADC Converter: Converts the analog signal from the SEN0193 sensor into a digital value readable via I2C (address 0x48).
 - Flask: A lightweight Python web framework used to display the data in a web browser.
 - Chart.js: A JavaScript library used to create interactive line charts for visualizing the data.
 
@@ -54,21 +55,24 @@ SHT31-D Sensor:
 
 SEN0193 Soil Moisture Sensor with ADS7830:
 
-    The SEN0193 sensor outputs an analog voltage proportional to the soil moisture level.
-    Use the ADS7830 ADC to convert the analog signal into a digital value for the Raspberry Pi.
-    ADS7830 wiring:
-        VCC to 3.3V or 5V.
-        GND to GND.
-        SDA to GPIO 2 (pin 3).
-        SCL to GPIO 3 (pin 5).
-    SEN0193 wiring:
-        VCC to 3.3V.
-        GND to GND.
-        Signal (analog output) to one of the ADC input channels on the ADS7830 (e.g., CH0)
+The SEN0193 sensor outputs an analog voltage proportional to the soil moisture level.
+
+Use the ADS7830 ADC to convert the analog signal into a digital value for the Raspberry Pi.
+
+ADS7830 wiring:
+- VCC to 3.3V or 5V.
+- GND to GND.
+- SDA to GPIO 2 (pin 3).
+- SCL to GPIO 3 (pin 5).
+
+SEN0193 wiring:
+- VCC to 3.3V.
+- GND to GND.
+- Signal (analog output) to one of the ADC input channels on the ADS7830 (e.g., CH0)
 
 Ensure the wiring is correct:
-- SDA to GPIO 2 (pins 3)
-- SCL to GPIO 3 (pins 5)
+- SDA to GPIO 2 (pins 3 or line)
+- SCL to GPIO 3 (pins 5 or line)
 - VCC to 3.3V
 - GND to GND
 
