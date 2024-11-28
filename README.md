@@ -54,7 +54,9 @@ Ensure the wiring is correct:
 
 5. Start the Application
 To start the Flask application:
+```
 python app.py
+```
 The application will run on http://0.0.0.0:5000/. You can access it through your Raspberry Pi's IP address.
 
 6. View Data
