@@ -44,15 +44,17 @@ This will create a sensor_data.db file with the necessary structure.
 
 4. Connect Sensors
 Connect the SHT31-D sensor and SEN0193 soil moisture sensor to your Raspberry Pi.
-SHT31-D Sensor:
+
+##### SHT31-D Sensor:
 
     I2C address: 0x44
     Ensure the wiring is correct:
+    
         SDA to GPIO 2 (pin 3)
         SCL to GPIO 3 (pin 5)
         VCC to 3.3V
         GND to GND
-
+    
 SEN0193 Soil Moisture Sensor with ADS7830:
 
 The SEN0193 sensor outputs an analog voltage proportional to the soil moisture level.
@@ -60,21 +62,58 @@ The SEN0193 sensor outputs an analog voltage proportional to the soil moisture l
 Use the ADS7830 ADC to convert the analog signal into a digital value for the Raspberry Pi.
 
 ADS7830 wiring:
+ ```
 - VCC to 3.3V or 5V.
 - GND to GND.
 - SDA to GPIO 2 (pin 3).
 - SCL to GPIO 3 (pin 5).
+```
 
 SEN0193 wiring:
+```
 - VCC to 3.3V.
 - GND to GND.
 - Signal (analog output) to one of the ADC input channels on the ADS7830 (e.g., CH0)
-
+```
 Ensure the wiring is correct:
+```
 - SDA to GPIO 2 (pins 3 or line)
 - SCL to GPIO 3 (pins 5 or line)
 - VCC to 3.3V
 - GND to GND
+```
+
+### Soil Moisture Sensor Calibration
+
+Calibrating the SEN0193 soil moisture sensor ensures accurate readings by mapping the sensor's raw output to real-world moisture levels. Follow these steps:
+
+1. Setup:
+   - Connect the sensor to the ADS7830 ADC and interface it with your microcontroller (e.g., Raspberry Pi).
+
+2. Dry Soil Reading:
+   - Place the sensor in dry soil, wait for the value to stabilize, and record the ADC output (Vdry).
+
+3. Wet Soil Reading:
+   - Insert the sensor into moist soil, allow it to stabilize, and record the ADC output (Vwet).
+
+4. (Optional) Water Reading:
+   - Submerge the sensor in water to determine the 100% moisture value (Vwater).
+
+#### Formula:
+Map the ADC values to a percentage:
+```
+Moisture (%) = ((Vdry - Vcurrent) / (Vdry - Vwet)) * 100
+
+Clamp the result between 0% and 100%.
+```
+#### Example Output:
+```
+- Dry Soil: 193
+- Wet Soil: 100
+- Water: 100
+```
+Use these values to fine-tune your soil monitoring system.
+Check the calibration script for implementation!
 
 5. Start the Application
 To start the Flask application:
