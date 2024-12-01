@@ -17,11 +17,11 @@ Calibrating the SEN0193 soil moisture sensor ensures accurate readings by mappin
 
 #### Formula:
 Map the ADC values to a percentage:
-```
-Moisture (%) = ((Vdry - Vcurrent) / (Vdry - Vwet)) * 100
+
+$\text{Moisture (\%)} = \left( \frac{V_{\text{dry}} - V_{\text{current}}}{V_{\text{dry}} - V_{\text{wet}}} \right) \times 100$
 
 Clamp the result between 0% and 100%.
-```
+
 #### Example Output:
 ```
 - Dry Soil: 193
