@@ -23,6 +23,9 @@ TIMEZONE = "Europe/Warsaw"  # Timezone for local time
 TEMP_COMMAND = [0x2C, 0x06]  # Command to read temperature and humidity from SHT31-D
 RELAY_CHANNEL = 9  # GPIO pin for the relay controlling the lights
 
+DRY_SOIL_ADC = 191  # ADC value for dry soil
+WET_SOIL_ADC = 100  # ADC value for wet soil
+
 # GPIO setup
 GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)
@@ -50,15 +53,37 @@ def init_db():
     conn.commit()
     conn.close()
 
-# Function to read soil moisture from ADC
+# Function to convert raw ADC value to soil moisture percentage
+def convert_to_percentage(raw_value, dry_value=DRY_SOIL_ADC, wet_value=WET_SOIL_ADC):
+    """
+    Converts the raw ADC value to a soil moisture percentage.
+    :param raw_value: Raw ADC value from the ADS7830 (0-255).
+    :param dry_value: ADC value corresponding to dry soil (191).
+    :param wet_value: ADC value corresponding to wet soil (100).
+    :return: Soil moisture percentage (0-100%).
+    """
+    if raw_value >= dry_value:
+        return 0.0  # Completely dry
+    elif raw_value <= wet_value:
+        return 100.0  # Fully wet
+    # Linear interpolation
+    percentage = ((dry_value - raw_value) / (dry_value - wet_value)) * 100
+    return round(percentage, 2)
+
+# Updated Function to read soil moisture from ADC
 def read_soil_moisture(channel, adc_address=ADC_ADDRESS):
+    """
+    Reads and converts soil moisture raw value to percentage.
+    :param channel: ADC channel for the soil moisture sensor.
+    :param adc_address: I2C address of the ADC.
+    :return: Soil moisture percentage (0-100%).
+    """
     bus = smbus.SMBus(1)
     assert 0 <= channel <= 7, "Invalid ADC channel. Must be between 0 and 7."
     command = 0x84 | (channel << 4)
     bus.write_byte(adc_address, command)
-    adc_value = bus.read_byte(adc_address)
-    soil_moisture = (adc_value / 255.0) * 100
-    return soil_moisture
+    raw_value = bus.read_byte(adc_address)
+    return convert_to_percentage(raw_value)
 
 # Function to control lights based on specific hours
 def control_lights():
