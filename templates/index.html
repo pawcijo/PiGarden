@@ -55,7 +55,7 @@
             font-size: 16px;
         }
 
-        .light-status {
+        .light-status, .cpu-temperature {
             margin-top: 20px;
             font-size: 1.2em;
             font-weight: bold;
@@ -73,6 +73,11 @@
         <p>Light Status: <span id="lightStatus">{{ light_status }}</span></p>
     </div>
 
+    <!-- Raspberry Pi CPU Temperature -->
+    <div class="cpu-temperature">
+        <p>Raspberry Pi CPU Temperature: <span id="cpuTemperature">{{ cpu_temperature | round(1) }}°C</span></p>
+    </div>
+
     <div class="chart-container">
         <!-- Temperature Chart -->
         <canvas id="temperatureChart"></canvas>
@@ -80,7 +85,7 @@
         <!-- Humidity Chart -->
         <canvas id="humidityChart"></canvas>
 
-        <!-- Soil Moisture Chart (newly added) -->
+        <!-- Soil Moisture Chart -->
         <canvas id="soilMoistureChart"></canvas>
     </div>
 
@@ -163,7 +168,7 @@
             }
         });
 
-        // Soil Moisture Chart (newly added)
+        // Soil Moisture Chart
         var ctxSoil = document.getElementById('soilMoistureChart').getContext('2d');
         var soilMoistureChart = new Chart(ctxSoil, {
             type: 'line',

@@ -160,6 +160,19 @@ def index():
     humidities = [row[2] for row in rows]
     soil_moistures = [row[3] for row in rows]
 
+    # Read CPU temperature from the Raspberry Pi
+    def get_cpu_temperature():
+        try:
+            # Read the CPU temperature from the system file
+            with open("/sys/class/thermal/thermal_zone0/temp", "r") as temp_file:
+                temp = int(temp_file.read()) / 1000.0  # Convert to Celsius
+            return temp
+        except Exception as e:
+            print(f"Error reading CPU temperature: {e}")
+            return None
+
+    cpu_temperature = get_cpu_temperature()
+
     local_timezone = pytz.timezone(TIMEZONE)
     recent_date = datetime.now(local_timezone).strftime("%Y-%m-%d")
 
@@ -170,8 +183,10 @@ def index():
         humidities=humidities,
         soil_moistures=soil_moistures,
         recent_date=recent_date,
-        light_status=light_status
+        light_status=light_status,
+        cpu_temperature=cpu_temperature  # Pass CPU temperature to the template
     )
+
 
 if __name__ == "__main__":
     try:
