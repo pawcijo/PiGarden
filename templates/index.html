@@ -28,50 +28,51 @@
             margin: 10px;
         }
 
-        /* Dark mode styles */
-        body.dark-mode {
-            background-color: #333;
-            color: #fff;
-        }
-
-        body.dark-mode .chart-container {
-            background-color: #444;
-        }
-
-        body.dark-mode button {
-            background-color: #555;
-            color: #fff;
-        }
-
-        button {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            padding: 10px;
-            border: none;
-            cursor: pointer;
-            background-color: #f1f1f1;
-            color: #000;
-            font-size: 16px;
-        }
-
-        .light-status, .cpu-temperature {
+        .cpu-temperature {
             margin-top: 20px;
             font-size: 1.2em;
             font-weight: bold;
         }
+
+        #cpuTemperature {
+            font-weight: bold;
+            color: #000; /* Default color */
+        }
+
+        /* Dark mode styles */
+        body.dark-mode {
+            background-color: #121212;
+            color: #f1f1f1;
+        }
+
+        body.dark-mode #cpuTemperature {
+            color: #f1f1f1; /* Adjust text color in dark mode */
+        }
+
+        /* Toggle button styles */
+        .toggle-theme {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        body.dark-mode .toggle-theme {
+            background-color: #ff9800;
+            color: #000;
+        }
     </style>
 </head>
 <body>
-    <!-- Dark mode toggle button -->
-    <button id="darkModeToggle">Enable Dark Mode</button>
+    <!-- Dark Mode Toggle Button -->
+    <button class="toggle-theme">Switch to Dark Mode</button>
 
     <h1>Sensor Data ({{ recent_date }})</h1>
-
-    <!-- Light Status Display -->
-    <div class="light-status">
-        <p>Light Status: <span id="lightStatus">{{ light_status }}</span></p>
-    </div>
 
     <!-- Raspberry Pi CPU Temperature -->
     <div class="cpu-temperature">
@@ -101,21 +102,21 @@
         var temperatureChart = new Chart(ctxTemp, {
             type: 'line',
             data: {
-                labels: timestampsReversed,  // Use reversed timestamps
+                labels: timestampsReversed,
                 datasets: [
                     {
                         label: 'Temperature (°C) Below 0°C',
-                        data: temperaturesReversed.map(temp => (temp < 0 ? temp : null)),  // Only show values below 0
-                        borderColor: 'rgb(0, 0, 255)',  // Blue line for below 0°C
-                        backgroundColor: 'rgba(0, 0, 255, 0.2)',  // Light blue fill
-                        fill: true  // Enable filling below the line
+                        data: temperaturesReversed.map(temp => (temp < 0 ? temp : null)),
+                        borderColor: 'rgb(0, 0, 255)',
+                        backgroundColor: 'rgba(0, 0, 255, 0.2)',
+                        fill: true
                     },
                     {
                         label: 'Temperature (°C) Above 0°C',
-                        data: temperaturesReversed.map(temp => (temp >= 0 ? temp : null)),  // Only show values above 0
-                        borderColor: 'rgb(255, 99, 132)',  // Original color for above 0°C
-                        backgroundColor: 'rgba(255, 255, 204, 0.2)',  // Light yellow fill for above 0°C
-                        fill: true  // Enable filling above the line
+                        data: temperaturesReversed.map(temp => (temp >= 0 ? temp : null)),
+                        borderColor: 'rgb(255, 99, 132)',
+                        backgroundColor: 'rgba(255, 255, 204, 0.2)',
+                        fill: true
                     }
                 ]
             },
@@ -123,14 +124,14 @@
                 responsive: true,
                 scales: {
                     y: {
-                        min: -10,  // Set the min value for the temperature chart to -10°C
-                        max: 40,  // Set the max value for the temperature chart to 40°C
+                        min: -10,
+                        max: 40,
                         beginAtZero: false
                     }
                 },
                 plugins: {
                     legend: {
-                        position: 'top',  // Top-right legend
+                        position: 'top',
                         align: 'end'
                     }
                 }
@@ -142,26 +143,26 @@
         var humidityChart = new Chart(ctxHum, {
             type: 'line',
             data: {
-                labels: timestampsReversed,  // Use reversed timestamps
+                labels: timestampsReversed,
                 datasets: [{
                     label: 'Humidity (%)',
-                    data: humiditiesReversed,  // Use reversed humidity data
+                    data: humiditiesReversed,
                     borderColor: 'rgb(54, 162, 235)',
-                    backgroundColor: 'rgba(173, 216, 230, 0.3)',  // Light blue background
-                    fill: true  // Enable filling under the line to show background color
+                    backgroundColor: 'rgba(173, 216, 230, 0.3)',
+                    fill: true
                 }]
             },
             options: {
                 responsive: true,
                 scales: {
                     y: {
-                        max: 100,  // Set the max value of the humidity graph to 100
+                        max: 100,
                         beginAtZero: true
                     }
                 },
                 plugins: {
                     legend: {
-                        position: 'top',  // Top-right legend
+                        position: 'top',
                         align: 'end'
                     }
                 }
@@ -173,53 +174,52 @@
         var soilMoistureChart = new Chart(ctxSoil, {
             type: 'line',
             data: {
-                labels: timestampsReversed,  // Use reversed timestamps
+                labels: timestampsReversed,
                 datasets: [{
                     label: 'Soil Moisture (%)',
-                    data: soilMoisturesReversed,  // Use reversed soil moisture data
-                    borderColor: 'rgb(75, 192, 192)',  // Light greenish color for soil moisture
-                    backgroundColor: 'rgba(75, 192, 192, 0.3)',  // Light greenish fill
-                    fill: true  // Enable filling under the line to show background color
+                    data: soilMoisturesReversed,
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.3)',
+                    fill: true
                 }]
             },
             options: {
                 responsive: true,
                 scales: {
                     y: {
-                        max: 100,  // Set the max value for soil moisture chart to 100%
+                        max: 100,
                         beginAtZero: true
                     }
                 },
                 plugins: {
                     legend: {
-                        position: 'top',  // Top-right legend
+                        position: 'top',
                         align: 'end'
                     }
                 }
             }
         });
 
-        // Toggle Dark Mode on button click
-        const toggleButton = document.getElementById('darkModeToggle');
-        const currentMode = localStorage.getItem('darkMode') === 'enabled';
+        // Update the text color based on CPU temperature
+        let cpuTemperature = parseFloat('{{ cpu_temperature | round(1) }}');
+        const cpuTempElement = document.getElementById('cpuTemperature');
 
-        // If dark mode was previously enabled, apply it
-        if (currentMode) {
-            document.body.classList.add('dark-mode');
-            toggleButton.textContent = 'Disable Dark Mode';
+        function updateCpuTemperatureColor(temp) {
+            const intensity = Math.min(Math.max((temp - 30) / 70, 0), 1); // Scale 30°C to 100°C
+            const red = Math.round(255 * intensity);
+            const green = Math.round(255 * (1 - intensity));
+            cpuTempElement.style.color = `rgb(${red}, ${green}, 0)`;
         }
 
-        // Add event listener to toggle dark mode
-        toggleButton.addEventListener('click', function() {
+        updateCpuTemperatureColor(cpuTemperature);
+
+        // Dark mode toggle functionality
+        const toggleButton = document.querySelector('.toggle-theme');
+        toggleButton.addEventListener('click', () => {
             document.body.classList.toggle('dark-mode');
-            // Save the user's preference in localStorage
-            if (document.body.classList.contains('dark-mode')) {
-                localStorage.setItem('darkMode', 'enabled');
-                toggleButton.textContent = 'Disable Dark Mode';
-            } else {
-                localStorage.setItem('darkMode', 'disabled');
-                toggleButton.textContent = 'Enable Dark Mode';
-            }
+            toggleButton.textContent = document.body.classList.contains('dark-mode') 
+                ? 'Switch to Light Mode' 
+                : 'Switch to Dark Mode';
         });
     </script>
 </body>
