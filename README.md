@@ -3,7 +3,7 @@
 PiGarden is a simple web-based application that allows you to monitor environmental data from various sensors, including temperature, humidity, and soil moisture, using a Raspberry Pi. The application stores the sensor readings in an SQLite database and provides real-time data visualization through interactive charts.
 
 ## Features
-- Real-time sensor data monitoring: Collects temperature, humidity, and soil moisture data.
+- Real-time sensor data monitoring: Collects temperature, humidity, soil moisture, and CPU temperature data.
 - SQLite database: Stores the collected data with timestamps.
 - Web interface: View your data using an interactive dashboard built with Flask and Chart.js.
 - Data storage and persistence: Historical data is stored in an SQLite database, making it easy to analyze trends over time.
@@ -108,7 +108,7 @@ The app collects data at regular intervals (every hour) and stores it in the dat
 
 ## Data Visualization
 The web interface presents the following charts:
-- Temperature Chart: Displays temperature readings over time.
+- Temperature Chart: Displays temperature readings from the SHT31-D sensor and CPU temperature over time.
 - Humidity Chart: Displays humidity readings over time.
 - Soil Moisture Chart: Displays soil moisture levels over time.
 
@@ -130,12 +130,14 @@ PiGarden/
 ```
 
 ## Database Schema
-The SQLite database sensor_data.db contains a table called sensor_readings with the following columns:
+The SQLite database `sensor_data.db` contains a table called `sensor_readings` with the following columns:
 - id: Auto-incremented primary key.
 - timestamp: Date and time of the sensor reading.
 - temperature: Temperature value from the SHT31-D sensor.
 - humidity: Humidity value from the SHT31-D sensor.
 - soil_moisture: Soil moisture level in percentage.
+- cpu_temperature: CPU temperature of the Raspberry Pi.
+
 
 ## Troubleshooting
 - I2C Communication Error: Make sure I2C is enabled on your Raspberry Pi and that your sensors are correctly connected.

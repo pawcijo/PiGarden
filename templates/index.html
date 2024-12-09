@@ -88,14 +88,40 @@
 
         <!-- Soil Moisture Chart -->
         <canvas id="soilMoistureChart"></canvas>
+
+        <!-- CPU Temperature Chart -->
+        <canvas id="cpuTempChart"></canvas>
     </div>
 
     <script>
+        // Apply the saved theme from localStorage
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-mode');
+        }
+
+        // Set button text based on the current theme
+        const toggleButton = document.querySelector('.toggle-theme');
+        toggleButton.textContent = document.body.classList.contains('dark-mode') 
+            ? 'Switch to Light Mode' 
+            : 'Switch to Dark Mode';
+
+        // Toggle dark mode and save the preference in localStorage
+        toggleButton.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+            toggleButton.textContent = isDarkMode 
+                ? 'Switch to Light Mode' 
+                : 'Switch to Dark Mode';
+        });
+
         // Reverse the order of data points to show the newest data on the right
         var timestampsReversed = {{ timestamps | tojson }}.reverse();
         var temperaturesReversed = {{ temperatures | tojson }}.reverse();
         var humiditiesReversed = {{ humidities | tojson }}.reverse();
         var soilMoisturesReversed = {{ soil_moistures | tojson }}.reverse();
+        var cpuTemperaturesReversed = {{ cpu_temperatures | tojson }}.reverse();
 
         // Temperature Chart
         var ctxTemp = document.getElementById('temperatureChart').getContext('2d');
@@ -105,17 +131,10 @@
                 labels: timestampsReversed,
                 datasets: [
                     {
-                        label: 'Temperature (°C) Below 0°C',
-                        data: temperaturesReversed.map(temp => (temp < 0 ? temp : null)),
-                        borderColor: 'rgb(0, 0, 255)',
-                        backgroundColor: 'rgba(0, 0, 255, 0.2)',
-                        fill: true
-                    },
-                    {
-                        label: 'Temperature (°C) Above 0°C',
-                        data: temperaturesReversed.map(temp => (temp >= 0 ? temp : null)),
+                        label: 'Temperature (°C)',
+                        data: temperaturesReversed,
                         borderColor: 'rgb(255, 99, 132)',
-                        backgroundColor: 'rgba(255, 255, 204, 0.2)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
                         fill: true
                     }
                 ]
@@ -124,15 +143,9 @@
                 responsive: true,
                 scales: {
                     y: {
+                        max: 55,
                         min: -10,
-                        max: 40,
                         beginAtZero: false
-                    }
-                },
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        align: 'end'
                     }
                 }
             }
@@ -159,12 +172,6 @@
                         max: 100,
                         beginAtZero: true
                     }
-                },
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        align: 'end'
-                    }
                 }
             }
         });
@@ -190,11 +197,31 @@
                         max: 100,
                         beginAtZero: true
                     }
-                },
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        align: 'end'
+                }
+            }
+        });
+
+        // CPU Temperature Chart
+        var ctxCpu = document.getElementById('cpuTempChart').getContext('2d');
+        var cpuTempChart = new Chart(ctxCpu, {
+            type: 'line',
+            data: {
+                labels: timestampsReversed,
+                datasets: [{
+                    label: 'CPU Temperature (°C)',
+                    data: cpuTemperaturesReversed,
+                    borderColor: 'rgb(255, 206, 86)',
+                    backgroundColor: 'rgba(255, 206, 86, 0.2)',
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        max: 100,
+                        min: 20,
+                        beginAtZero: false
                     }
                 }
             }
@@ -212,15 +239,6 @@
         }
 
         updateCpuTemperatureColor(cpuTemperature);
-
-        // Dark mode toggle functionality
-        const toggleButton = document.querySelector('.toggle-theme');
-        toggleButton.addEventListener('click', () => {
-            document.body.classList.toggle('dark-mode');
-            toggleButton.textContent = document.body.classList.contains('dark-mode') 
-                ? 'Switch to Light Mode' 
-                : 'Switch to Dark Mode';
-        });
     </script>
 </body>
 </html>
