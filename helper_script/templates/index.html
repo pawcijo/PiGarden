@@ -10,13 +10,35 @@
         #realtime-data {
             margin-bottom: 20px;
         }
-        .chart-container {
-            width: 80%;
-            margin: 20px auto;
+
+        /* 2x2 grid layout for the charts */
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* Two columns */
+            grid-gap: 20px; /* Space between the charts */
+            margin-top: 20px;
+            background-color: #f4f4f9; /* Light background color for the graphs section */
+            padding: 20px;
+            border-radius: 10px;
         }
+
+        .chart-container {
+            width: 100%;
+            height: 300px; /* Fixed height for charts */
+            background-color: #ffffff; /* White background for individual chart containers */
+            border: 1px solid #ddd; /* Light border around each chart */
+            border-radius: 8px;
+            padding: 10px;
+        }
+
         canvas {
             width: 100%;
-            height: 300px;
+            height: 100%; /* Make the canvas fill its container */
+        }
+
+        h3 {
+            text-align: center;
+            color: #333;
         }
     </style>
 </head>
@@ -29,10 +51,8 @@
         <div id="log"></div>
     </div>
 
-    <!-- Section for displaying example graphs -->
-    <div id="graphs">
-        <h2>Example Graphs</h2>
-        
+    <!-- Section for displaying example graphs in 2x2 grid -->
+    <div id="graphs" class="charts-container">
         <!-- Temperature Graph -->
         <div class="chart-container">
             <h3>Temperature (°C)</h3>
