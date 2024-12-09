@@ -7,6 +7,10 @@ PiGarden is a simple web-based application that allows you to monitor environmen
 - SQLite database: Stores the collected data with timestamps.
 - Web interface: View your data using an interactive dashboard built with Flask and Chart.js.
 - Data storage and persistence: Historical data is stored in an SQLite database, making it easy to analyze trends over time.
+- Light control: Automatically manages the lights based on time, with manual overrides through the web interface.
+- Watchdog: A heartbeat mechanism ensures that the lights are turned off if the light control process is killed.
+
+
 
 #  Components
 - Raspberry Pi: The main platform that reads sensor data via I2C.
@@ -15,6 +19,8 @@ PiGarden is a simple web-based application that allows you to monitor environmen
 - ADS7830 ADC Converter: Converts the analog signal from the SEN0193 sensor into a digital value readable via I2C (address 0x48).
 - Flask: A lightweight Python web framework used to display the data in a web browser.
 - Chart.js: A JavaScript library used to create interactive line charts for visualizing the data.
+- Light control process: Manages the lighting of the garden based on time and manual override.
+- Watchdog process: Monitors the status of the light control process and ensures the lights are turned off if the process fails.
 
 ## Installation
 
@@ -106,6 +112,10 @@ You will see real-time temperature, humidity, and soil moisture readings, as wel
 ## Data Collection
 The app collects data at regular intervals (every hour) and stores it in the database. Data is inserted into the sensor_readings table with a timestamp. The application also calculates soil moisture percentage and stores it in the same table.
 
+## Light Control 
+
+The lights are automatically controlled based on predefined time settings (e.g., on at 10:50 PM, off at 8:00 AM). The light control is handled by a separate process that ensures the lights are turned off when the control script ends. If the control process is killed (e.g., via pkill), the lights will be turned off automatically.
+
 ## Data Visualization
 The web interface presents the following charts:
 - Temperature Chart: Displays temperature readings from the SHT31-D sensor and CPU temperature over time.
@@ -121,12 +131,19 @@ The app includes a dark mode toggle, which can be activated by clicking the butt
 ```
 PiGarden/
 │
-├── app.py            # Main Flask application
-├── init_db.py        # Script to initialize the database
-├── requirements.txt  # List of Python dependencies
-├── templates/
-│   ├── index.html    # HTML template for the web interface
-└── sensor_data.db    # SQLite database where sensor data is stored
+├── SensorServer/
+│   ├── data_storage.py     # Script for storing sensor data
+│   ├── data_update.py      # Script for updating sensor data
+│   ├── init_database.py    # Script for initializing the database
+│   ├── light_control.py    # Script for controlling lights with a heartbeat mechanism
+│   ├── sensor_utils.py     # Utility functions for sensor management
+│   └── web_server.py       # Main Flask web server
+│
+├── helper_script/          # Helper scripts directory
+├── logs/                   # Directory for logs
+├── requirements.txt        # Python dependencies
+├── sensor_data.db          # SQLite database where sensor data is stored
+└── README.md               # This README file
 ```
 
 ## Database Schema
