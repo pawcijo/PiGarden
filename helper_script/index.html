@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Socket.IO Broadcast Example</title>
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>Socket.IO Broadcast Example</h1>
+    <div id="log"></div>
+
+    <script>
+        const socket = io("http://83.238.174.175:8080"); // Replace <SERVER_IP> with your server's IP
+
+        // Create or select a single message container
+        const log = document.getElementById('log');
+        const message = document.createElement('p');
+        log.appendChild(message);
+
+        // Handle new client connection messages
+        socket.on('newclientconnect', function (data) {
+            message.textContent = data.description; // Update the description field dynamically
+        });
+
+        // Handle broadcast messages
+        socket.on('broadcast', function (data) {
+            message.textContent = data.description; // Update the description field dynamically
+        });
+    </script>
+</body>
+</html>
