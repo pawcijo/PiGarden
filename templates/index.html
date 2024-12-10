@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sensor Dashboard</title>
+    <title>PiGarden</title>
     <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* Default light mode styles */
+        /* Default dark mode styles using VS Code palette */
         body {
-            background-color: #fff;
-            color: #000;
+            background-color: #1e1e1e; /* #1e1e1e (30,30,30) */
+            color: #f1f1f1;
             font-family: Arial, sans-serif;
         }
 
@@ -37,17 +37,17 @@
 
         #cpuTemperature {
             font-weight: bold;
-            color: #000; /* Default color */
-        }
-
-        /* Dark mode styles */
-        body.dark-mode {
-            background-color: #121212;
             color: #f1f1f1;
         }
 
-        body.dark-mode #cpuTemperature {
-            color: #f1f1f1; /* Adjust text color in dark mode */
+        /* Light mode styles */
+        body.light-mode {
+            background-color: #f5f5f5;
+            color: #000;
+        }
+
+        .light-mode #cpuTemperature {
+            color: #000;
         }
 
         /* Toggle button styles */
@@ -56,24 +56,56 @@
             top: 10px;
             right: 10px;
             padding: 10px 15px;
-            background-color: #007bff;
-            color: #fff;
+            background-color: #ff9800;
+            color: #000;
             border: none;
             border-radius: 5px;
             cursor: pointer;
         }
 
-        body.dark-mode .toggle-theme {
-            background-color: #ff9800;
-            color: #000;
+        .dark-mode .toggle-theme {
+            background-color: #007acc; /* #007acc (0,122,204) */
+            color: #fff;
+        }
+
+        /* Section background colors */
+        #realtime-data {
+            background-color: #252526; /* #252526 (37,37,38) */
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .light-mode #realtime-data {
+            background-color: #eaeaea;
+        }
+
+        .historical-data {
+            background-color: #2d2d30; /* #2d2d30 (45,45,48) */
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .light-mode .historical-data {
+            background-color: #f4f4f4;
+        }
+
+        /* Chart background colors */
+        .dark-mode canvas {
+            background-color: #3e3e42; /* #3e3e42 (62,62,66) */
+        }
+
+        .light-mode canvas {
+            background-color: #fff;
         }
     </style>
 </head>
 <body>
     <!-- Dark Mode Toggle Button -->
-    <button class="toggle-theme">Switch to Dark Mode</button>
+    <button class="toggle-theme">Switch to Light Mode</button>
 
-    <h1>Sensor Data Dashboard</h1>
+    <h1>PiGarden</h1>
 
     <!-- Real-Time Sensor Data -->
     <div id="realtime-data">
@@ -86,7 +118,7 @@
 
     <!-- Historical Data Graphs -->
     <h2>Historical Sensor Data ({{ recent_date }})</h2>
-    <div class="chart-container">
+    <div class="chart-container historical-data">
         <canvas id="temperatureChart"></canvas>
         <canvas id="humidityChart"></canvas>
         <canvas id="soilMoistureChart"></canvas>
@@ -96,8 +128,14 @@
     <script>
         // Apply the saved theme from localStorage
         const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'dark') {
+        if (!savedTheme || savedTheme === 'dark') {
             document.body.classList.add('dark-mode');
+            document.getElementById('realtime-data').classList.add('dark-mode');
+            document.querySelector('.historical-data').classList.add('dark-mode');
+        } else {
+            document.body.classList.add('light-mode');
+            document.getElementById('realtime-data').classList.add('light-mode');
+            document.querySelector('.historical-data').classList.add('light-mode');
         }
 
         const toggleButton = document.querySelector('.toggle-theme');
@@ -107,6 +145,11 @@
 
         toggleButton.addEventListener('click', () => {
             document.body.classList.toggle('dark-mode');
+            document.body.classList.toggle('light-mode');
+            document.getElementById('realtime-data').classList.toggle('dark-mode');
+            document.getElementById('realtime-data').classList.toggle('light-mode');
+            document.querySelector('.historical-data').classList.toggle('dark-mode');
+            document.querySelector('.historical-data').classList.toggle('light-mode');
             const isDarkMode = document.body.classList.contains('dark-mode');
             localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
             toggleButton.textContent = isDarkMode 
@@ -134,6 +177,16 @@
 
         // Create charts for each data set
         function createChart(ctx, label, data, color) {
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            
+            // In light mode, make the fill color slightly lighter than the line color
+            const lightModeFillColor = `rgba(${parseInt(color.slice(4, 7), 10)}, ${parseInt(color.slice(9, 12), 10)}, ${parseInt(color.slice(14, 17), 10)}, 0.2)`;  // Fill color with light opacity
+            
+            // In dark mode, make the fill color darker
+            const darkModeFillColor = `rgba(${parseInt(color.slice(4, 7), 10)}, ${parseInt(color.slice(9, 12), 10)}, ${parseInt(color.slice(14, 17), 10)}, 0.4)`;  // Fill color with darker opacity
+            
+            const backgroundColor = isDarkMode ? darkModeFillColor : lightModeFillColor;
+
             return new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -141,8 +194,8 @@
                     datasets: [{
                         label: label,
                         data: data.reverse(),
-                        borderColor: color,
-                        backgroundColor: `${color}33`, // Transparent fill
+                        borderColor: color,  // Line color
+                        backgroundColor: backgroundColor,  // Fill color
                         fill: true
                     }]
                 },
