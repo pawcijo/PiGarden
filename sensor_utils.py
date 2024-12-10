@@ -1,8 +1,12 @@
 import smbus
+import time
 
 ADC_ADDRESS = 0x48  # I2C address for ADC
 DRY_SOIL_ADC = 191  # ADC value for dry soil
 WET_SOIL_ADC = 100  # ADC value for wet soil
+
+SHT31_ADDRESS = 0x44
+TEMP_COMMAND = [0x2C, 0x06]
 
 # Function to convert raw ADC value to soil moisture percentage
 def convert_to_percentage(raw_value, dry_value=DRY_SOIL_ADC, wet_value=WET_SOIL_ADC):
@@ -31,3 +35,16 @@ def get_cpu_temperature():
     except Exception as e:
         print(f"Error reading CPU temperature: {e}")
         return None
+    
+def read_temperature_humidity():
+    try:
+        bus = smbus.SMBus(1)
+        bus.write_i2c_block_data(SHT31_ADDRESS, TEMP_COMMAND[0], [TEMP_COMMAND[1]])
+        time.sleep(0.015)
+        data = bus.read_i2c_block_data(SHT31_ADDRESS, 0x00, 6)
+        temp_raw = (data[0] << 8) | data[1]
+        humidity_raw = (data[3] << 8) | data[4]
+        return round(-45 + 175 * (temp_raw / 65535.0), 2), round(100 * (humidity_raw / 65535.0), 2)
+    except Exception as e:
+        print(f"Error reading temperature and humidity: {e}")
+        return None, None

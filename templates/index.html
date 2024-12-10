@@ -169,11 +169,11 @@
         });
 
         // Historical Data for Graphs
-        const timestamps = {{ timestamps | tojson }};
-        const temperatures = {{ temperatures | tojson }};
-        const humidities = {{ humidities | tojson }};
-        const soilMoistures = {{ soil_moistures | tojson }};
-        const cpuTemperatures = {{ cpu_temperatures | tojson }};
+        const timestamps = {{ timestamps | tojson }}.reverse();
+        const temperatures = {{ temperatures | tojson }}.reverse();
+        const humidities = {{ humidities | tojson }}.reverse();
+        const soilMoistures = {{ soil_moistures | tojson }}.reverse();
+        const cpuTemperatures = {{ cpu_temperatures | tojson }}.reverse();
 
         // Create charts for each data set
         function createChart(ctx, label, data, color) {
@@ -190,10 +190,10 @@
             return new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: timestamps.reverse(),
+                    labels: timestamps,
                     datasets: [{
                         label: label,
-                        data: data.reverse(),
+                        data: data,
                         borderColor: color,  // Line color
                         backgroundColor: backgroundColor,  // Fill color
                         fill: true

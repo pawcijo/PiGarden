@@ -2,7 +2,7 @@ import eventlet
 import socketio
 from flask import Flask, render_template
 from data_storage import get_data_from_db
-from sensor_utils import get_cpu_temperature
+from sensor_utils import get_cpu_temperature, read_soil_moisture, read_temperature_humidity
 from light_control import get_light_status
 import smbus
 import time
@@ -21,37 +21,6 @@ DRY_SOIL_ADC = 191
 WET_SOIL_ADC = 100
 SHT31_ADDRESS = 0x44
 TEMP_COMMAND = [0x2C, 0x06]
-
-def convert_to_percentage(raw_value, dry_value=DRY_SOIL_ADC, wet_value=WET_SOIL_ADC):
-    if raw_value >= dry_value:
-        return 0.0
-    elif raw_value <= wet_value:
-        return 100.0
-    return round(((dry_value - raw_value) / (dry_value - wet_value)) * 100, 2)
-
-def read_soil_moisture(channel, adc_address=ADC_ADDRESS):
-    try:
-        bus = smbus.SMBus(1)
-        command = 0x84 | (channel << 4)
-        bus.write_byte(adc_address, command)
-        raw_value = bus.read_byte(adc_address)
-        return convert_to_percentage(raw_value)
-    except Exception as e:
-        print(f"Error reading soil moisture: {e}")
-        return None
-
-def read_temperature_humidity():
-    try:
-        bus = smbus.SMBus(1)
-        bus.write_i2c_block_data(SHT31_ADDRESS, TEMP_COMMAND[0], [TEMP_COMMAND[1]])
-        time.sleep(0.015)
-        data = bus.read_i2c_block_data(SHT31_ADDRESS, 0x00, 6)
-        temp_raw = (data[0] << 8) | data[1]
-        humidity_raw = (data[3] << 8) | data[4]
-        return round(-45 + 175 * (temp_raw / 65535.0), 2), round(100 * (humidity_raw / 65535.0), 2)
-    except Exception as e:
-        print(f"Error reading temperature and humidity: {e}")
-        return None, None
 
 @app.route("/")
 def index():
