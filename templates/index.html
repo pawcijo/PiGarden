@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sensor Data</title>
+    <title>Sensor Dashboard</title>
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* Default light mode styles */
@@ -72,24 +73,23 @@
     <!-- Dark Mode Toggle Button -->
     <button class="toggle-theme">Switch to Dark Mode</button>
 
-    <h1>Sensor Data ({{ recent_date }})</h1>
+    <h1>Sensor Data Dashboard</h1>
 
-    <!-- Raspberry Pi CPU Temperature -->
-    <div class="cpu-temperature">
-        <p>Raspberry Pi CPU Temperature: <span id="cpuTemperature">{{ cpu_temperature | round(1) }}°C</span></p>
+    <!-- Real-Time Sensor Data -->
+    <div id="realtime-data">
+        <h2>Real-Time Sensor Data</h2>
+        <p>Soil Moisture: <span id="realtime-soil-moisture">Loading...</span>%</p>
+        <p>Temperature: <span id="realtime-temperature">Loading...</span>°C</p>
+        <p>Humidity: <span id="realtime-humidity">Loading...</span>%</p>
+        <p>Raspberry Pi CPU Temperature: <span id="realtime-cpu-temperature">Loading...</span>°C</p>
     </div>
 
+    <!-- Historical Data Graphs -->
+    <h2>Historical Sensor Data ({{ recent_date }})</h2>
     <div class="chart-container">
-        <!-- Temperature Chart -->
         <canvas id="temperatureChart"></canvas>
-
-        <!-- Humidity Chart -->
         <canvas id="humidityChart"></canvas>
-
-        <!-- Soil Moisture Chart -->
         <canvas id="soilMoistureChart"></canvas>
-
-        <!-- CPU Temperature Chart -->
         <canvas id="cpuTempChart"></canvas>
     </div>
 
@@ -100,13 +100,11 @@
             document.body.classList.add('dark-mode');
         }
 
-        // Set button text based on the current theme
         const toggleButton = document.querySelector('.toggle-theme');
         toggleButton.textContent = document.body.classList.contains('dark-mode') 
             ? 'Switch to Light Mode' 
             : 'Switch to Dark Mode';
 
-        // Toggle dark mode and save the preference in localStorage
         toggleButton.addEventListener('click', () => {
             document.body.classList.toggle('dark-mode');
             const isDarkMode = document.body.classList.contains('dark-mode');
@@ -116,129 +114,53 @@
                 : 'Switch to Dark Mode';
         });
 
-        // Reverse the order of data points to show the newest data on the right
-        var timestampsReversed = {{ timestamps | tojson }}.reverse();
-        var temperaturesReversed = {{ temperatures | tojson }}.reverse();
-        var humiditiesReversed = {{ humidities | tojson }}.reverse();
-        var soilMoisturesReversed = {{ soil_moistures | tojson }}.reverse();
-        var cpuTemperaturesReversed = {{ cpu_temperatures | tojson }}.reverse();
+        // Initialize Socket.IO for real-time data
+        const socket = io("http://83.238.174.175:5000");
 
-        // Temperature Chart
-        var ctxTemp = document.getElementById('temperatureChart').getContext('2d');
-        var temperatureChart = new Chart(ctxTemp, {
-            type: 'line',
-            data: {
-                labels: timestampsReversed,
-                datasets: [
-                    {
-                        label: 'Temperature (°C)',
-                        data: temperaturesReversed,
-                        borderColor: 'rgb(255, 99, 132)',
-                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+        // Update real-time data
+        socket.on('broadcast', (data) => {
+            document.getElementById('realtime-soil-moisture').textContent = data.soil_moisture || 'N/A';
+            document.getElementById('realtime-temperature').textContent = data.temperature || 'N/A';
+            document.getElementById('realtime-humidity').textContent = data.humidity || 'N/A';
+            document.getElementById('realtime-cpu-temperature').textContent = data.cpu_temperature || 'N/A';
+        });
+
+        // Historical Data for Graphs
+        const timestamps = {{ timestamps | tojson }};
+        const temperatures = {{ temperatures | tojson }};
+        const humidities = {{ humidities | tojson }};
+        const soilMoistures = {{ soil_moistures | tojson }};
+        const cpuTemperatures = {{ cpu_temperatures | tojson }};
+
+        // Create charts for each data set
+        function createChart(ctx, label, data, color) {
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: timestamps.reverse(),
+                    datasets: [{
+                        label: label,
+                        data: data.reverse(),
+                        borderColor: color,
+                        backgroundColor: `${color}33`, // Transparent fill
                         fill: true
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        max: 55,
-                        min: -10,
-                        beginAtZero: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
                     }
                 }
-            }
-        });
-
-        // Humidity Chart
-        var ctxHum = document.getElementById('humidityChart').getContext('2d');
-        var humidityChart = new Chart(ctxHum, {
-            type: 'line',
-            data: {
-                labels: timestampsReversed,
-                datasets: [{
-                    label: 'Humidity (%)',
-                    data: humiditiesReversed,
-                    borderColor: 'rgb(54, 162, 235)',
-                    backgroundColor: 'rgba(173, 216, 230, 0.3)',
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        max: 100,
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-
-        // Soil Moisture Chart
-        var ctxSoil = document.getElementById('soilMoistureChart').getContext('2d');
-        var soilMoistureChart = new Chart(ctxSoil, {
-            type: 'line',
-            data: {
-                labels: timestampsReversed,
-                datasets: [{
-                    label: 'Soil Moisture (%)',
-                    data: soilMoisturesReversed,
-                    borderColor: 'rgb(75, 192, 192)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.3)',
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        max: 100,
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-
-        // CPU Temperature Chart
-        var ctxCpu = document.getElementById('cpuTempChart').getContext('2d');
-        var cpuTempChart = new Chart(ctxCpu, {
-            type: 'line',
-            data: {
-                labels: timestampsReversed,
-                datasets: [{
-                    label: 'CPU Temperature (°C)',
-                    data: cpuTemperaturesReversed,
-                    borderColor: 'rgb(255, 206, 86)',
-                    backgroundColor: 'rgba(255, 206, 86, 0.2)',
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        max: 100,
-                        min: 20,
-                        beginAtZero: false
-                    }
-                }
-            }
-        });
-
-        // Update the text color based on CPU temperature
-        let cpuTemperature = parseFloat('{{ cpu_temperature | round(1) }}');
-        const cpuTempElement = document.getElementById('cpuTemperature');
-
-        function updateCpuTemperatureColor(temp) {
-            const intensity = Math.min(Math.max((temp - 30) / 70, 0), 1); // Scale 30°C to 100°C
-            const red = Math.round(255 * intensity);
-            const green = Math.round(255 * (1 - intensity));
-            cpuTempElement.style.color = `rgb(${red}, ${green}, 0)`;
+            });
         }
 
-        updateCpuTemperatureColor(cpuTemperature);
+        createChart(document.getElementById('temperatureChart').getContext('2d'), 'Temperature (°C)', temperatures, 'rgb(255, 99, 132)');
+        createChart(document.getElementById('humidityChart').getContext('2d'), 'Humidity (%)', humidities, 'rgb(54, 162, 235)');
+        createChart(document.getElementById('soilMoistureChart').getContext('2d'), 'Soil Moisture (%)', soilMoistures, 'rgb(75, 192, 192)');
+        createChart(document.getElementById('cpuTempChart').getContext('2d'), 'CPU Temperature (°C)', cpuTemperatures, 'rgb(255, 159, 64)');
     </script>
 </body>
 </html>
