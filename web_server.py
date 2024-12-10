@@ -63,7 +63,7 @@ def broadcast_data():
             'humidity': humidity,
             'cpu_temperature': cpu_temperature
         })
-        eventlet.sleep(1)
+        eventlet.sleep(10)
 
 if __name__ == "__main__":
     eventlet.spawn_n(broadcast_data)
