@@ -7,9 +7,9 @@ ADC_ADDRESS = 0x48  # I2C address of ADS7830
 CHANNEL = 0  # ADC channel for the soil moisture sensor
 
 # Calibration values
-DRY_SOIL = 191
-WET_SOIL = 100
-WATER = 95  # Optional (used for reference if needed)
+DRY_SOIL = 174
+WET_SOIL = 79
+WATER = 63  # Optional (used for reference if needed)
 
 def read_adc(channel, adc_address=ADC_ADDRESS):
     """
