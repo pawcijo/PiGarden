@@ -1,12 +1,33 @@
-import smbus
+import os
 import time
+import smbus
+import board
+import adafruit_veml7700
+import logging
+from datetime import datetime
 
+veml7700 = None
+
+# Constants
 ADC_ADDRESS = 0x48  # I2C address for ADC
 DRY_SOIL_ADC = 174  # ADC value for dry soil
 WET_SOIL_ADC = 79  # ADC value for wet soil
-
 SHT31_ADDRESS = 0x44
 TEMP_COMMAND = [0x2C, 0x06]
+
+# Set up logging for sensor utils
+log_dir = "logs"
+log_file = f"{log_dir}/sensor_utils.log"
+if not os.path.exists(log_dir):
+    os.makedirs(log_dir)
+
+sensor_logger = logging.getLogger('sensor_utils')
+sensor_logger.setLevel(logging.INFO)
+
+# Create a file handler to write logs to the file
+file_handler = logging.FileHandler(log_file)
+file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+sensor_logger.addHandler(file_handler)
 
 # Function to convert raw ADC value to soil moisture percentage
 def convert_to_percentage(raw_value, dry_value=DRY_SOIL_ADC, wet_value=WET_SOIL_ADC):
@@ -24,6 +45,7 @@ def read_soil_moisture(channel, adc_address=ADC_ADDRESS):
     command = 0x84 | (channel << 4)
     bus.write_byte(adc_address, command)
     raw_value = bus.read_byte(adc_address)
+    sensor_logger.info(f"Read soil moisture from channel {channel}: raw ADC value = {raw_value}")
     return convert_to_percentage(raw_value)
 
 # Function to read Raspberry Pi CPU temperature
@@ -31,11 +53,13 @@ def get_cpu_temperature():
     try:
         with open("/sys/class/thermal/thermal_zone0/temp", "r") as temp_file:
             temp = int(temp_file.read()) / 1000.0  # Convert to Celsius
+        sensor_logger.info(f"CPU temperature: {temp}°C")
         return temp
     except Exception as e:
-        print(f"Error reading CPU temperature: {e}")
+        sensor_logger.error(f"Error reading CPU temperature: {e}")
         return None
     
+# Function to read temperature and humidity from SHT31 sensor
 def read_temperature_humidity():
     try:
         bus = smbus.SMBus(1)
@@ -44,7 +68,49 @@ def read_temperature_humidity():
         data = bus.read_i2c_block_data(SHT31_ADDRESS, 0x00, 6)
         temp_raw = (data[0] << 8) | data[1]
         humidity_raw = (data[3] << 8) | data[4]
-        return round(-45 + 175 * (temp_raw / 65535.0), 2), round(100 * (humidity_raw / 65535.0), 2)
+        temp = round(-45 + 175 * (temp_raw / 65535.0), 2)
+        humidity = round(100 * (humidity_raw / 65535.0), 2)
+        sensor_logger.info(f"Temperature: {temp}°C, Humidity: {humidity}%")
+        return temp, humidity
     except Exception as e:
-        print(f"Error reading temperature and humidity: {e}")
+        sensor_logger.error(f"Error reading temperature and humidity: {e}")
         return None, None
+
+# Function to initialize the VEML7700 sensor
+def initialize_veml7700():
+    global veml7700
+    try:
+        if veml7700 is not None:
+            sensor_logger.info("VEML7700 is already initialized.")
+            return veml7700
+
+        i2c = board.I2C()  # Uses board.SCL and board.SDA
+        veml7700 = adafruit_veml7700.VEML7700(i2c)
+        
+        veml7700.light_gain = veml7700.ALS_GAIN_1_8  # Try changing the gain value
+        veml7700.integration_time = 100  # Try increasing the integration time to 100ms
+        
+        sensor_logger.info("VEML7700 sensor initialized successfully.")
+        return veml7700
+    except Exception as e:
+        sensor_logger.error(f"Error initializing VEML7700 sensor: {e}")
+        return None
+
+def read_lux():
+    global veml7700
+    try:
+        if veml7700 is None:
+            veml7700 = initialize_veml7700()
+
+        if veml7700:
+            raw_light = veml7700.lux  # Raw lux value for ambient light
+            sensor_logger.info(f"Raw light reading: {raw_light}")
+            ambient_light = round(raw_light, 2)  # Processed lux value
+            sensor_logger.info(f"Processed ambient light reading: {ambient_light} lux")
+            return ambient_light
+        else:
+            sensor_logger.error("VEML7700 sensor is not initialized.")
+            return None
+    except Exception as e:
+        sensor_logger.error(f"Error reading ambient light: {e}")
+        return None

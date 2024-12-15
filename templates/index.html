@@ -90,15 +90,6 @@
         .light-mode .historical-data {
             background-color: #f4f4f4;
         }
-
-        /* Chart background colors */
-        .dark-mode canvas {
-            background-color: #3e3e42; /* #3e3e42 (62,62,66) */
-        }
-
-        .light-mode canvas {
-            background-color: #fff;
-        }
     </style>
 </head>
 <body>
@@ -113,6 +104,8 @@
         <p>Soil Moisture: <span id="realtime-soil-moisture">Loading...</span>%</p>
         <p>Temperature: <span id="realtime-temperature">Loading...</span>°C</p>
         <p>Humidity: <span id="realtime-humidity">Loading...</span>%</p>
+        <p>Ambient Light (Lux): <span id="realtime-lux">Loading...</span></p>
+        <p>Light Status: <span id="light-status">Loading...</span></p>
         <p>Raspberry Pi CPU Temperature: <span id="realtime-cpu-temperature">Loading...</span>°C</p>
     </div>
 
@@ -123,6 +116,7 @@
         <canvas id="humidityChart"></canvas>
         <canvas id="soilMoistureChart"></canvas>
         <canvas id="cpuTempChart"></canvas>
+        <canvas id="luxChart"></canvas>
     </div>
 
     <script>
@@ -130,12 +124,8 @@
         const savedTheme = localStorage.getItem('theme');
         if (!savedTheme || savedTheme === 'dark') {
             document.body.classList.add('dark-mode');
-            document.getElementById('realtime-data').classList.add('dark-mode');
-            document.querySelector('.historical-data').classList.add('dark-mode');
         } else {
             document.body.classList.add('light-mode');
-            document.getElementById('realtime-data').classList.add('light-mode');
-            document.querySelector('.historical-data').classList.add('light-mode');
         }
 
         const toggleButton = document.querySelector('.toggle-theme');
@@ -146,10 +136,6 @@
         toggleButton.addEventListener('click', () => {
             document.body.classList.toggle('dark-mode');
             document.body.classList.toggle('light-mode');
-            document.getElementById('realtime-data').classList.toggle('dark-mode');
-            document.getElementById('realtime-data').classList.toggle('light-mode');
-            document.querySelector('.historical-data').classList.toggle('dark-mode');
-            document.querySelector('.historical-data').classList.toggle('light-mode');
             const isDarkMode = document.body.classList.contains('dark-mode');
             localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
             toggleButton.textContent = isDarkMode 
@@ -166,6 +152,8 @@
             document.getElementById('realtime-temperature').textContent = data.temperature || 'N/A';
             document.getElementById('realtime-humidity').textContent = data.humidity || 'N/A';
             document.getElementById('realtime-cpu-temperature').textContent = data.cpu_temperature || 'N/A';
+            document.getElementById('realtime-lux').textContent = data.lux || 'N/A';
+            document.getElementById('light-status').textContent = data.light_status === 'ON' ? 'ON' : 'OFF'; 
         });
 
         // Historical Data for Graphs
@@ -174,19 +162,10 @@
         const humidities = {{ humidities | tojson }}.reverse();
         const soilMoistures = {{ soil_moistures | tojson }}.reverse();
         const cpuTemperatures = {{ cpu_temperatures | tojson }}.reverse();
+        const luxValues = {{ lux_values | tojson }}.reverse();
 
         // Create charts for each data set
         function createChart(ctx, label, data, color) {
-            const isDarkMode = document.body.classList.contains('dark-mode');
-            
-            // In light mode, make the fill color slightly lighter than the line color
-            const lightModeFillColor = `rgba(${parseInt(color.slice(4, 7), 10)}, ${parseInt(color.slice(9, 12), 10)}, ${parseInt(color.slice(14, 17), 10)}, 0.2)`;  // Fill color with light opacity
-            
-            // In dark mode, make the fill color darker
-            const darkModeFillColor = `rgba(${parseInt(color.slice(4, 7), 10)}, ${parseInt(color.slice(9, 12), 10)}, ${parseInt(color.slice(14, 17), 10)}, 0.4)`;  // Fill color with darker opacity
-            
-            const backgroundColor = isDarkMode ? darkModeFillColor : lightModeFillColor;
-
             return new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -194,8 +173,8 @@
                     datasets: [{
                         label: label,
                         data: data,
-                        borderColor: color,  // Line color
-                        backgroundColor: backgroundColor,  // Fill color
+                        borderColor: color,
+                        backgroundColor: `${color}33`,
                         fill: true
                     }]
                 },
@@ -214,6 +193,7 @@
         createChart(document.getElementById('humidityChart').getContext('2d'), 'Humidity (%)', humidities, 'rgb(54, 162, 235)');
         createChart(document.getElementById('soilMoistureChart').getContext('2d'), 'Soil Moisture (%)', soilMoistures, 'rgb(75, 192, 192)');
         createChart(document.getElementById('cpuTempChart').getContext('2d'), 'CPU Temperature (°C)', cpuTemperatures, 'rgb(255, 159, 64)');
+        createChart(document.getElementById('luxChart').getContext('2d'), 'Ambient Light (Lux)', luxValues, 'rgb(153, 102, 255)');
     </script>
 </body>
 </html>

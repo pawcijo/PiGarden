@@ -2,12 +2,20 @@ import eventlet
 import socketio
 from flask import Flask, render_template
 from data_storage import get_data_from_db
-from sensor_utils import get_cpu_temperature, read_soil_moisture, read_temperature_humidity
-from light_control import get_light_status
+from sensor_utils import get_cpu_temperature, read_soil_moisture, read_temperature_humidity, read_lux
+from light_control import get_light_status  # Reads this from file, in the future use interprocess communication
 import smbus
 import time
 from datetime import datetime
 import pytz
+import logging
+
+# Configure logging
+logging.basicConfig(
+    filename='logs/web_server.log',
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(funcName)s - %(message)s'  # Include function name in log
+)
 
 # Socket.IO server
 sio = socketio.Server(cors_allowed_origins="*")
@@ -24,11 +32,8 @@ TEMP_COMMAND = [0x2C, 0x06]
 
 @app.route("/")
 def index():
-    timestamps, temperatures, humidities, soil_moistures, cpu_temperatures = get_data_from_db()
-    current_cpu_temperature = get_cpu_temperature()
-    light_status = get_light_status()
-    local_timezone = pytz.timezone("Europe/Warsaw")
-    recent_date = datetime.now(local_timezone).strftime("%Y-%m-%d")
+    # Fetch historical data from the database
+    timestamps, temperatures, humidities, soil_moistures, cpu_temperatures, lux_values = get_data_from_db()
 
     return render_template(
         "index.html",
@@ -37,34 +42,41 @@ def index():
         humidities=humidities,
         soil_moistures=soil_moistures,
         cpu_temperatures=cpu_temperatures,
-        cpu_temperature=current_cpu_temperature,
-        recent_date=recent_date,
-        light_status=light_status
+        lux_values=lux_values
     )
 
 @sio.event
 def connect(sid, environ):
-    print(f"Client connected: {sid}")
+    logging.info(f"Client connected: {sid}")
     sio.emit('newclientconnect', {'description': 'Welcome to the dashboard!'}, room=sid)
 
 @sio.event
 def disconnect(sid):
-    print(f"Client disconnected: {sid}")
+    logging.info(f"Client disconnected: {sid}")
 
 def broadcast_data():
     while True:
         soil_moisture = read_soil_moisture(ADC_CHANNEL)
         temperature, humidity = read_temperature_humidity()
         cpu_temperature = get_cpu_temperature()
+        ambient_light = read_lux()  # Only retrieve ambient_light, ignore white_light
+        light_status = get_light_status()  # Get light status from shared memory
 
         sio.emit('broadcast', {
             'soil_moisture': soil_moisture,
             'temperature': temperature,
             'humidity': humidity,
-            'cpu_temperature': cpu_temperature
+            'cpu_temperature': cpu_temperature,
+            'lux': ambient_light,
+            'light_status': light_status  # Include light status in broadcast
         })
+
+        logging.info(f"Broadcasting data: Soil Moisture={soil_moisture}%, Temperature={temperature}°C, "
+                     f"Humidity={humidity}%, CPU Temp={cpu_temperature}°C, Lux={ambient_light}, Light Status={light_status}")
+        
         eventlet.sleep(10)
 
 if __name__ == "__main__":
+    logging.info("Web server starting...")
     eventlet.spawn_n(broadcast_data)
     eventlet.wsgi.server(eventlet.listen(('', 5000)), flask_app)

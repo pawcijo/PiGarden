@@ -34,7 +34,7 @@ print()
 print("----------------------------------------------------------\n")
 
 # Configure the sensor for demonstration
-veml7700.light_gain = 1  # Set gain (options: 1, 1/2, 1/4)
+veml7700.light_gain = veml7700.ALS_GAIN_1_8  # Set gain (options: 1, 1/2, 1/4)
 veml7700.integration_time = 100  # Set integration time in ms (options: 25, 50, 100, etc.)
 
 

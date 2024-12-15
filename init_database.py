@@ -14,7 +14,8 @@ def initialize_database():
             temperature REAL,
             humidity REAL,
             soil_moisture REAL,
-            cpu_temperature REAL  -- Column for Raspberry Pi CPU temperature
+            cpu_temperature REAL, -- Column for Raspberry Pi CPU temperature
+            lux REAL -- Column for ambient light readings
         );
         """)
 
