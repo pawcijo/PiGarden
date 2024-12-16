@@ -164,36 +164,52 @@
         const cpuTemperatures = {{ cpu_temperatures | tojson }}.reverse();
         const luxValues = {{ lux_values | tojson }}.reverse();
 
-        // Create charts for each data set
-        function createChart(ctx, label, data, color) {
-            return new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: timestamps,
-                    datasets: [{
-                        label: label,
-                        data: data,
-                        borderColor: color,
-                        backgroundColor: `${color}33`,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
+
+        function getRGBAColor(rgbColor, transparency) 
+        {
+            const match = rgbColor.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+            if (!match) 
+            {
+                throw new Error("Invalid RGB color format");
+            }
+            const [r, g, b] = match.slice(1, 4).map(Number); // Extract red, green, blue
+            return `rgba(${r}, ${g}, ${b}, ${transparency})`;
         }
 
-        createChart(document.getElementById('temperatureChart').getContext('2d'), 'Temperature (°C)', temperatures, 'rgb(255, 99, 132)');
-        createChart(document.getElementById('humidityChart').getContext('2d'), 'Humidity (%)', humidities, 'rgb(54, 162, 235)');
-        createChart(document.getElementById('soilMoistureChart').getContext('2d'), 'Soil Moisture (%)', soilMoistures, 'rgb(75, 192, 192)');
-        createChart(document.getElementById('cpuTempChart').getContext('2d'), 'CPU Temperature (°C)', cpuTemperatures, 'rgb(255, 159, 64)');
-        createChart(document.getElementById('luxChart').getContext('2d'), 'Ambient Light (Lux)', luxValues, 'rgb(153, 102, 255)');
-    </script>
+        function createChart(ctx, label, data, color, min = null, max = null) {
+    const backgroundColor = getRGBAColor(color, 0.2); // 20% opacity
+
+    return new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: timestamps,
+            datasets: [{
+                label: label,
+                data: data,
+                borderColor: color,
+                backgroundColor: backgroundColor,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    min: min, // Apply min value if provided
+                    max: max  // Apply max value if provided
+                }
+            }
+        }
+    });
+}
+
+// Create charts with optional min and max values
+createChart(document.getElementById('temperatureChart').getContext('2d'), 'Temperature (°C)', temperatures, 'rgb(255, 99, 132)', 0, 50);
+createChart(document.getElementById('humidityChart').getContext('2d'), 'Humidity (%)', humidities, 'rgb(54, 162, 235)', 0, 100);
+createChart(document.getElementById('soilMoistureChart').getContext('2d'), 'Soil Moisture (%)', soilMoistures, 'rgb(75, 192, 192)', 0, 100);
+createChart(document.getElementById('cpuTempChart').getContext('2d'), 'CPU Temperature (°C)', cpuTemperatures, 'rgb(255, 159, 64)', 30, 100);
+createChart(document.getElementById('luxChart').getContext('2d'), 'Ambient Light (Lux)', luxValues, 'rgb(153, 102, 255)', 0, 20000); // No min/max values
+</script>
 </body>
 </html>
