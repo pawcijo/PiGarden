@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,7 +10,7 @@
     <style>
         /* Default dark mode styles using VS Code palette */
         body {
-            background-color: #1e1e1e; /* #1e1e1e (30,30,30) */
+            background-color: #1e1e1e;
             color: #f1f1f1;
             font-family: Arial, sans-serif;
         }
@@ -40,17 +41,6 @@
             color: #f1f1f1;
         }
 
-        /* Light mode styles */
-        body.light-mode {
-            background-color: #f5f5f5;
-            color: #000;
-        }
-
-        .light-mode #cpuTemperature {
-            color: #000;
-        }
-
-        /* Toggle button styles */
         .toggle-theme {
             position: fixed;
             top: 10px;
@@ -64,13 +54,12 @@
         }
 
         .dark-mode .toggle-theme {
-            background-color: #007acc; /* #007acc (0,122,204) */
+            background-color: #007acc;
             color: #fff;
         }
 
-        /* Section background colors */
         #realtime-data {
-            background-color: #252526; /* #252526 (37,37,38) */
+            background-color: #252526;
             padding: 20px;
             border-radius: 8px;
             margin-top: 20px;
@@ -78,10 +67,11 @@
 
         .light-mode #realtime-data {
             background-color: #eaeaea;
+            color: black;
         }
 
         .historical-data {
-            background-color: #2d2d30; /* #2d2d30 (45,45,48) */
+            background-color: #2d2d30;
             padding: 20px;
             border-radius: 8px;
             margin-top: 20px;
@@ -89,9 +79,29 @@
 
         .light-mode .historical-data {
             background-color: #f4f4f4;
+            color: black;
+        }
+
+        /* Styling for light status */
+        .light-status {
+            font-weight: bold;
+        }
+
+        .on {
+            color: green;
+        }
+
+        .off {
+            color: red;
+        }
+
+        /* Light mode text color */
+        .light-mode {
+            color: black;
         }
     </style>
 </head>
+
 <body>
     <!-- Dark Mode Toggle Button -->
     <button class="toggle-theme">Switch to Light Mode</button>
@@ -105,7 +115,7 @@
         <p>Temperature: <span id="realtime-temperature">Loading...</span>°C</p>
         <p>Humidity: <span id="realtime-humidity">Loading...</span>%</p>
         <p>Ambient Light (Lux): <span id="realtime-lux">Loading...</span></p>
-        <p>Light Status: <span id="light-status">Loading...</span></p>
+        <p>Light Status: <span id="light-status" class="light-status">Loading...</span></p>
         <p>Raspberry Pi CPU Temperature: <span id="realtime-cpu-temperature">Loading...</span>°C</p>
     </div>
 
@@ -129,8 +139,8 @@
         }
 
         const toggleButton = document.querySelector('.toggle-theme');
-        toggleButton.textContent = document.body.classList.contains('dark-mode') 
-            ? 'Switch to Light Mode' 
+        toggleButton.textContent = document.body.classList.contains('dark-mode')
+            ? 'Switch to Light Mode'
             : 'Switch to Dark Mode';
 
         toggleButton.addEventListener('click', () => {
@@ -138,8 +148,8 @@
             document.body.classList.toggle('light-mode');
             const isDarkMode = document.body.classList.contains('dark-mode');
             localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
-            toggleButton.textContent = isDarkMode 
-                ? 'Switch to Light Mode' 
+            toggleButton.textContent = isDarkMode
+                ? 'Switch to Light Mode'
                 : 'Switch to Dark Mode';
         });
 
@@ -148,13 +158,49 @@
 
         // Update real-time data
         socket.on('broadcast', (data) => {
+            const cpuTemperatureElement = document.getElementById('realtime-cpu-temperature');
             document.getElementById('realtime-soil-moisture').textContent = data.soil_moisture || 'N/A';
             document.getElementById('realtime-temperature').textContent = data.temperature || 'N/A';
             document.getElementById('realtime-humidity').textContent = data.humidity || 'N/A';
             document.getElementById('realtime-cpu-temperature').textContent = data.cpu_temperature || 'N/A';
             document.getElementById('realtime-lux').textContent = data.lux || 'N/A';
-            document.getElementById('light-status').textContent = data.light_status === 'ON' ? 'ON' : 'OFF'; 
+            const lightStatusElement = document.getElementById('light-status');
+            lightStatusElement.textContent = data.light_status === 'ON' ? 'ON' : 'OFF';
+            
+            // Apply the color and light bulb emoji based on the light status
+            if (data.light_status === 'ON') {
+                lightStatusElement.classList.add('on');
+                lightStatusElement.classList.remove('off');
+                lightStatusElement.textContent += " 💡";  // Append light bulb emoji
+            } else {
+                lightStatusElement.classList.add('off');
+                lightStatusElement.classList.remove('on');
+            }
+
+            // Get CPU temperature and update its color
+            const cpuTemp = data.cpu_temperature;
+            // Set dynamic color based on temperature
+            cpuTemperatureElement.style.color = getCpuTempColor(cpuTemp);
         });
+
+        function getCpuTempColor(cpuTemp) {
+            const minTemp = 30; // Minimum temperature for scaling
+            const maxTemp = 100; // Maximum temperature for scaling
+
+            // Normalize the temperature between 0 and 1
+            const normalizedTemp = (cpuTemp - minTemp) / (maxTemp - minTemp);
+
+            // Clamp the value between 0 and 1
+            const clampedTemp = Math.min(Math.max(normalizedTemp, 0), 1);
+
+            // Interpolate between green (low) and red (high)
+            const red = Math.floor(clampedTemp * 255);
+            const green = Math.floor((1 - clampedTemp) * 255);
+            const blue = 0; // No blue, to keep it a red-green scale
+
+            // Return the corresponding RGB color
+            return `rgb(${red}, ${green}, ${blue})`;
+        }
 
         // Historical Data for Graphs
         const timestamps = {{ timestamps | tojson }}.reverse();
@@ -164,12 +210,9 @@
         const cpuTemperatures = {{ cpu_temperatures | tojson }}.reverse();
         const luxValues = {{ lux_values | tojson }}.reverse();
 
-
-        function getRGBAColor(rgbColor, transparency) 
-        {
+        function getRGBAColor(rgbColor, transparency) {
             const match = rgbColor.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
-            if (!match) 
-            {
+            if (!match) {
                 throw new Error("Invalid RGB color format");
             }
             const [r, g, b] = match.slice(1, 4).map(Number); // Extract red, green, blue
@@ -177,39 +220,41 @@
         }
 
         function createChart(ctx, label, data, color, min = null, max = null) {
-    const backgroundColor = getRGBAColor(color, 0.2); // 20% opacity
+            const backgroundColor = getRGBAColor(color, 0.2); // 20% opacity
 
-    return new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: timestamps,
-            datasets: [{
-                label: label,
-                data: data,
-                borderColor: color,
-                backgroundColor: backgroundColor,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    min: min, // Apply min value if provided
-                    max: max  // Apply max value if provided
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: timestamps,
+                    datasets: [{
+                        label: label,
+                        data: data,
+                        borderColor: color,
+                        backgroundColor: backgroundColor,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            min: min, // Apply min value if provided
+                            max: max  // Apply max value if provided
+                        }
+                    }
                 }
-            }
+            });
         }
-    });
-}
 
-// Create charts with optional min and max values
-createChart(document.getElementById('temperatureChart').getContext('2d'), 'Temperature (°C)', temperatures, 'rgb(255, 99, 132)', 0, 50);
-createChart(document.getElementById('humidityChart').getContext('2d'), 'Humidity (%)', humidities, 'rgb(54, 162, 235)', 0, 100);
-createChart(document.getElementById('soilMoistureChart').getContext('2d'), 'Soil Moisture (%)', soilMoistures, 'rgb(75, 192, 192)', 0, 100);
-createChart(document.getElementById('cpuTempChart').getContext('2d'), 'CPU Temperature (°C)', cpuTemperatures, 'rgb(255, 159, 64)', 30, 100);
-createChart(document.getElementById('luxChart').getContext('2d'), 'Ambient Light (Lux)', luxValues, 'rgb(153, 102, 255)', 0, 20000); // No min/max values
-</script>
+        // Create charts with optional min and max values
+        createChart(document.getElementById('temperatureChart').getContext('2d'), 'Temperature (°C)', temperatures, 'rgb(255, 99, 132)', 0, 50);
+        createChart(document.getElementById('humidityChart').getContext('2d'), 'Humidity (%)', humidities, 'rgb(54, 162, 235)', 0, 100);
+        createChart(document.getElementById('soilMoistureChart').getContext('2d'), 'Soil Moisture (%)', soilMoistures, 'rgb(75, 192, 192)', 0, 100);
+        createChart(document.getElementById('cpuTempChart').getContext('2d'), 'CPU Temperature (°C)', cpuTemperatures, 'rgb(255, 159, 64)', 30, 100);
+        createChart(document.getElementById('luxChart').getContext('2d'), 'Ambient Light (Lux)', luxValues, 'rgb(153, 102, 255)', 0, 20000);
+
+    </script>
 </body>
+
 </html>
