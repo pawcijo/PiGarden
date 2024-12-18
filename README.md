@@ -3,24 +3,28 @@
 PiGarden is a simple web-based application that allows you to monitor environmental data from various sensors, including temperature, humidity, and soil moisture, using a Raspberry Pi. The application stores the sensor readings in an SQLite database and provides real-time data visualization through interactive charts.
 
 ## Features
-- Real-time sensor data monitoring: Collects temperature, humidity, soil moisture, and CPU temperature data.
+- Real-time sensor data monitoring: Collects temperature, humidity, soil moisture, CPU temperature, and ambient light data.
+- Modular services:
+
+    - Light control: Manages garden lighting based on predefined schedules.
+    - Irrigation system: Controls the water pump using GPIO relays.
+    - Sensor service: Collects sensor data and updates the database.
+    - Web service: Provides a dashboard for real-time monitoring and historical data visualization.
+
+- Flexible operation: Run each service individually or simultaneously - using a control script.
 - SQLite database: Stores the collected data with timestamps.
-- Web interface: View your data using an interactive dashboard built with Flask and Chart.js.
-- Data storage and persistence: Historical data is stored in an SQLite database, making it easy to analyze trends over time.
-- Light control: Automatically manages the lights based on time, with manual overrides through the web interface.
-- Watchdog: A heartbeat mechanism ensures that the lights are turned off if the light control process is killed.
-
-
+- Dark mode: User-friendly toggle to switch between light and dark themes.
 
 #  Components
 - Raspberry Pi: The main platform that reads sensor data via I2C.
 - SHT31-D Sensor: Measures temperature and humidity.
 - SEN0193 Soil Moisture Sensor: An analog sensor that measures the moisture level of the soil.
 - ADS7830 ADC Converter: Converts the analog signal from the SEN0193 sensor into a digital value readable via I2C (address 0x48).
+- VEML7700 Sensor: Measures lux (light intensity) for plant growth monitoring.
+- 230V Lamp: Used to simulate garden lighting. The lamp is controlled by a GPIO relay module.
+- Water Pump: Used for irrigation, controlled by GPIO relays. It can be a 12V DC water pump and should have a flow rate of at least 240 liters per hou
 - Flask: A lightweight Python web framework used to display the data in a web browser.
 - Chart.js: A JavaScript library used to create interactive line charts for visualizing the data.
-- Light control process: Manages the lighting of the garden based on time and manual override.
-- Watchdog process: Monitors the status of the light control process and ensures the lights are turned off if the process fails.
 
 ## Installation
 
@@ -93,58 +97,71 @@ Ensure the wiring is correct:
 
 ⚠️⚠️⚠️ Soil sensor should be calibrated, more instructions in [Sensor Calibration](https://github.com/pawcijo/PiGarden/tree/main/helper_script/soil_sensor_calibration.md)
 
-5. Start the Application
-To start the Flask application:
+5. Start the System 
+You can start all the services together using the provided start_server.sh script: 
 ```
-python app.py
+./start_server.sh
 ```
-The application will run on http://0.0.0.0:5000/. You can access it through your Raspberry Pi's IP address.
 
-6. View Data
-Open a web browser and navigate to your Raspberry Pi’s IP address on port 5000:
+To stop all services, use: 
 ```
-http://<your-pi-ip>:5000
+./stop_server.sh
 ```
-You will see real-time temperature, humidity, and soil moisture readings, as well as graphs showing historical data.
+Alternatively, you can run each service individually:
+
+
+Sensor Service:
+``` 
+python3 SensorServer/data_update.py
+```
+Light Control: 
+```
+sudo python3 SensorServer/light_control.py
+```
+Irrigation System:
+``` 
+sudo python3 SensorServer/irrigation_system.py
+```
+Web Service: 
+```
+    sudo python3 SensorServer/web_server.py
+```
+ 6. Access the Web Dashboard 
+ 
+ Once the web service is running, open a web browser and navigate to your Raspberry Pi’s IP address on port 5000: 
+ ```
+ http://<your-pi-ip>:5000
+ ``` 
+ You will see real-time temperature, humidity, soil moisture, and lux readings, as well as graphs showing historical data.
+ 
 
 # Usage
 
 ## Data Collection
-The app collects data at regular intervals (every hour) and stores it in the database. Data is inserted into the sensor_readings table with a timestamp. The application also calculates soil moisture percentage and stores it in the same table.
+Real-Time Data Monitoring: The app collects data from sensors and monitors:
+
+    Temperature
+    Humidity
+    Soil moisture
+    Ambient light (lux)
+    Irrigation system status
+    CPU temperature
 
 ## Light Control 
 
-The lights are automatically controlled based on predefined time settings (e.g., on at 10:50 PM, off at 8:00 AM). The light control is handled by a separate process that ensures the lights are turned off when the control script ends. If the control process is killed (e.g., via pkill), the lights will be turned off automatically.
+The lights are automatically controlled based on predefined time settings. The light control is handled by a separate process that ensures the lights are turned off when the control script ends. If the control process is killed (e.g., via pkill), the lights will be turned off automatically.
 
 ## Data Visualization
 The web interface presents the following charts:
-- Temperature Chart: Displays temperature readings from the SHT31-D sensor and CPU temperature over time.
-- Humidity Chart: Displays humidity readings over time.
-- Soil Moisture Chart: Displays soil moisture levels over time.
+- Temperature Chart: Displays readings from the SHT31-D sensor and CPU temperature.
+- Humidity Chart: Displays humidity levels.
+- Soil Moisture Chart: Displays soil moisture levels.
+- Light Level Chart: Displays ambient light (lux).
 
-The charts are updated in real-time as new data is collected.
+The charts are updated in every hour as new data is collected.
 
 ## Dark Mode
 The app includes a dark mode toggle, which can be activated by clicking the button in the top-right corner.
-
-## File Structure
-```
-PiGarden/
-│
-├── SensorServer/
-│   ├── data_storage.py     # Script for storing sensor data
-│   ├── data_update.py      # Script for updating sensor data
-│   ├── init_database.py    # Script for initializing the database
-│   ├── light_control.py    # Script for controlling lights with a heartbeat mechanism
-│   ├── sensor_utils.py     # Utility functions for sensor management
-│   └── web_server.py       # Main Flask web server
-│
-├── helper_script/          # Helper scripts directory
-├── logs/                   # Directory for logs
-├── requirements.txt        # Python dependencies
-├── sensor_data.db          # SQLite database where sensor data is stored
-└── README.md               # This README file
-```
 
 ## Database Schema
 The SQLite database `sensor_data.db` contains a table called `sensor_readings` with the following columns:
@@ -154,6 +171,7 @@ The SQLite database `sensor_data.db` contains a table called `sensor_readings` w
 - humidity: Humidity value from the SHT31-D sensor.
 - soil_moisture: Soil moisture level in percentage.
 - cpu_temperature: CPU temperature of the Raspberry Pi.
+- lux: Ambient light intensity measured by the VEML7700 sensor, stored as a real number.
 
 
 ## Troubleshooting
