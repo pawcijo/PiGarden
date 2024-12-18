@@ -116,6 +116,8 @@
         <p>Humidity: <span id="realtime-humidity">Loading...</span>%</p>
         <p>Ambient Light (Lux): <span id="realtime-lux">Loading...</span></p>
         <p>Light Status: <span id="light-status" class="light-status">Loading...</span></p>
+        <p>Irrigation System Status: <span id="irrigation-system-status"
+                class="irrigation-system-status">Loading...</span></p>
         <p>Raspberry Pi CPU Temperature: <span id="realtime-cpu-temperature">Loading...</span>°C</p>
     </div>
 
@@ -164,9 +166,14 @@
             document.getElementById('realtime-humidity').textContent = data.humidity || 'N/A';
             document.getElementById('realtime-cpu-temperature').textContent = data.cpu_temperature || 'N/A';
             document.getElementById('realtime-lux').textContent = data.lux || 'N/A';
+            document.getElementById('irrigation-system-status').textContent = data.irrigation_system_status === true ? 'ON' : 'OFF';
+
             const lightStatusElement = document.getElementById('light-status');
             lightStatusElement.textContent = data.light_status === 'ON' ? 'ON' : 'OFF';
-            
+
+            const irrigationStatusElement = document.getElementById('irrigation-system-status');
+            irrigationStatusElement.textContent = data.irrigation_system_status ? 'ON' : 'OFF';
+
             // Apply the color and light bulb emoji based on the light status
             if (data.light_status === 'ON') {
                 lightStatusElement.classList.add('on');
@@ -175,6 +182,15 @@
             } else {
                 lightStatusElement.classList.add('off');
                 lightStatusElement.classList.remove('on');
+            }
+
+            // Update the status color
+            if (data.irrigation_system_status) {
+                irrigationStatusElement.classList.add('on');
+                irrigationStatusElement.classList.remove('off');
+            } else {
+                irrigationStatusElement.classList.add('off');
+                irrigationStatusElement.classList.remove('on');
             }
 
             // Get CPU temperature and update its color

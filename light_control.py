@@ -10,7 +10,7 @@ import logging
 
 RELAY_CHANNEL = 9  # GPIO pin for the relay controlling the lights
 LIGHT_ON_HOUR = 22  # Hour to turn lights on (24-hour format)
-LIGHT_ON_MINUTE = 50  # Minute to turn lights on
+LIGHT_ON_MINUTE = 10  # Minute to turn lights on
 LIGHT_OFF_HOUR = 8  # Hour to turn lights off (24-hour format)
 LIGHT_OFF_MINUTE = 0  # Minute to turn lights off (24-hour format)
 SLEEP_INTERVAL_LIGHT_CONTROL = 60  # Interval to check light status (in seconds)

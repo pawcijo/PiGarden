@@ -4,6 +4,7 @@ from flask import Flask, render_template
 from data_storage import get_data_from_db
 from sensor_utils import get_cpu_temperature, read_soil_moisture, read_temperature_humidity, read_lux
 from light_control import get_light_status  # Reads this from file, in the future use interprocess communication
+import psutil
 import smbus
 import time
 from datetime import datetime
@@ -29,6 +30,17 @@ DRY_SOIL_ADC = 191
 WET_SOIL_ADC = 100
 SHT31_ADDRESS = 0x44
 TEMP_COMMAND = [0x2C, 0x06]
+
+def is_process_running(process_name):
+    for process in psutil.process_iter(attrs=['pid', 'name', 'cmdline']):
+        try:
+            # Check if the process name matches or appears in the command line
+            if process_name in " ".join(process.info['cmdline']):
+                return True
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            pass
+    return False
+
 
 @app.route("/")
 def index():
@@ -61,6 +73,7 @@ def broadcast_data():
         cpu_temperature = get_cpu_temperature()
         ambient_light = read_lux()  # Only retrieve ambient_light, ignore white_light
         light_status = get_light_status()  # Get light status from shared memory
+        irrigation_system_status = is_process_running("irrigation_system.py")
 
         sio.emit('broadcast', {
             'soil_moisture': soil_moisture,
@@ -68,11 +81,14 @@ def broadcast_data():
             'humidity': humidity,
             'cpu_temperature': cpu_temperature,
             'lux': ambient_light,
-            'light_status': light_status  # Include light status in broadcast
+            'light_status': light_status,
+            'irrigation_system_status': irrigation_system_status 
+
         })
 
         logging.info(f"Broadcasting data: Soil Moisture={soil_moisture}%, Temperature={temperature}°C, "
-                     f"Humidity={humidity}%, CPU Temp={cpu_temperature}°C, Lux={ambient_light}, Light Status={light_status}")
+                     f"Humidity={humidity}%, CPU Temp={cpu_temperature}°C, Lux={ambient_light}, Light Status={light_status} "
+                     f"Irrigation System Status : {irrigation_system_status}")
         
         eventlet.sleep(10)
 

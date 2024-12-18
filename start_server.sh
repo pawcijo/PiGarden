@@ -11,6 +11,15 @@ else
     echo "data_update.py is already running."
 fi
 
+# Check if irrigation_system.py is already running
+if ! pgrep -f "python3 irrigation_system.py" > /dev/null; then
+    echo "Starting irrigation_system.py..."
+    sudo python3 irrigation_system.py > logs/irrigation_system.log 2>&1 &
+else
+    echo "irrigation_system.py is already running."
+fi
+
+
 # Check if web_server.py is already running
 if ! pgrep -f "python3 web_server.py" > /dev/null; then
     echo "Starting web_server.py..."
@@ -26,6 +35,7 @@ if ! pgrep -f "python3 light_control.py" > /dev/null; then
 else
     echo "light_control.py is already running."
 fi
+
 
 # Print status of running processes
 echo "Scripts are running in the background."
