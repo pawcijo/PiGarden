@@ -1,12 +1,12 @@
 import time
-import RPi.GPIO as GPIO
+from gpiozero import OutputDevice
 import schedule
 import logging
 from datetime import datetime
 import os
 
-# Define relay channel
-relay_ch = 24
+# Define relay channel for irrigation
+relay_ch = OutputDevice(24, active_high=False, initial_value=False)
 
 # Create logs directory if it doesn't exist
 log_dir = "logs"
@@ -21,12 +21,6 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S"
 )
 
-# GPIO setup
-GPIO.setwarnings(False)
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(relay_ch, GPIO.OUT)
-GPIO.output(relay_ch, GPIO.HIGH)  # Ensure the pump is off initially
-
 def water_plants(duration):
     """
     Function to water plants by turning the relay on for a specified duration.
@@ -34,15 +28,12 @@ def water_plants(duration):
     """
     try:
         logging.info(f"Starting the pump for {duration} seconds.")
-        GPIO.output(relay_ch, GPIO.LOW)  # Turn on the pump
-        time.sleep(duration)            # Keep the pump running
+        relay_ch.on()  # Turn on the pump
+        time.sleep(duration)  # Keep the pump running
         logging.info("Stopping the pump.")
-        GPIO.output(relay_ch, GPIO.HIGH)  # Turn off the pump
+        relay_ch.off()  # Turn off the pump
     except Exception as e:
         logging.error(f"An error occurred while watering: {e}")
-    finally:
-        GPIO.cleanup()
-        logging.info("Watering process complete.")
 
 def schedule_watering(times, duration):
     """
@@ -56,7 +47,7 @@ def schedule_watering(times, duration):
 
 if __name__ == "__main__":
     # Define watering schedule and duration
-    watering_times = ["06:00", "18:00"]  # Adjust times as needed
+    watering_times = ["06:00", "12:00", "18:00", "22:00"]  # Adjust times as needed
     watering_duration = 10  # Duration in seconds for each session
 
     # Schedule watering
@@ -69,6 +60,5 @@ if __name__ == "__main__":
             schedule.run_pending()
             time.sleep(1)  # Avoid busy waiting
     except KeyboardInterrupt:
-        logging.info("Exiting irrigation system. Cleaning up GPIO...")
-        GPIO.cleanup()
+        logging.info("Exiting irrigation system.")
         logging.info("Irrigation system stopped.")

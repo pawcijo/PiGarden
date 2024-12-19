@@ -3,7 +3,7 @@ import socketio
 from flask import Flask, render_template
 from data_storage import get_data_from_db
 from sensor_utils import get_cpu_temperature, read_soil_moisture, read_temperature_humidity, read_lux
-from light_control import get_light_status  # Reads this from file, in the future use interprocess communication
+from sensor_utils import get_light_status  # Reads this from file, in the future use interprocess communication
 import psutil
 import smbus
 import time
