@@ -86,9 +86,9 @@ def broadcast_data():
 
         })
 
-        logging.info(f"Broadcasting data: Soil Moisture={soil_moisture}%, Temperature={temperature}°C, "
-                     f"Humidity={humidity}%, CPU Temp={cpu_temperature}°C, Lux={ambient_light}, Light Status={light_status} "
-                     f"Irrigation System Status : {irrigation_system_status}")
+        #logging.info(f"Broadcasting data: Soil Moisture={soil_moisture}%, Temperature={temperature}°C, "
+        #             f"Humidity={humidity}%, CPU Temp={cpu_temperature}°C, Lux={ambient_light}, Light Status={light_status} "
+        #             f"Irrigation System Status : {irrigation_system_status}")
         
         eventlet.sleep(10)
 

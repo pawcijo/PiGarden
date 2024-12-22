@@ -84,10 +84,10 @@ def get_light_status(path=status_file_path):
         if os.path.exists(path):
             with open(path, "r") as status_file:
                 light_status = status_file.read().strip()
-            sensor_logger.info(f"Returning light status from file at {path}: {light_status}")
+            #sensor_logger.info(f"Returning light status from file at {path}: {light_status}")
             return light_status
         else:
-            sensor_logger.info(f"Status file not found at {path}. Returning default status: OFF.")
+            #sensor_logger.info(f"Status file not found at {path}. Returning default status: OFF.")
             return "OFF"
 
 # Function to initialize the VEML7700 sensor
