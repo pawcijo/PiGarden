@@ -3,13 +3,14 @@ import socketio
 from flask import Flask, render_template
 from data_storage import get_data_from_db
 from sensor_utils import get_cpu_temperature, read_soil_moisture, read_temperature_humidity, read_lux
-from sensor_utils import get_light_status  # Reads this from file, in the future use interprocess communication
+from sensor_utils import get_light_status
 import psutil
 import smbus
 import time
 from datetime import datetime
 import pytz
 import logging
+import ssl
 
 # Configure logging
 logging.basicConfig(
@@ -83,16 +84,22 @@ def broadcast_data():
             'lux': ambient_light,
             'light_status': light_status,
             'irrigation_system_status': irrigation_system_status 
-
         })
 
-        #logging.info(f"Broadcasting data: Soil Moisture={soil_moisture}%, Temperature={temperature}°C, "
-        #             f"Humidity={humidity}%, CPU Temp={cpu_temperature}°C, Lux={ambient_light}, Light Status={light_status} "
-        #             f"Irrigation System Status : {irrigation_system_status}")
-        
         eventlet.sleep(10)
 
 if __name__ == "__main__":
     logging.info("Web server starting...")
+    
+    # Load SSL certificates
+    context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+    context.load_cert_chain(certfile='/etc/letsencrypt/live/pioasis.duckdns.org/fullchain.pem', keyfile='/etc/letsencrypt/live/pioasis.duckdns.org/privkey.pem')
+
     eventlet.spawn_n(broadcast_data)
-    eventlet.wsgi.server(eventlet.listen(('', 5000)), flask_app)
+
+    # Use SSL context to start the server on HTTPS
+    listener = eventlet.listen(('', 443))
+    ssl_listener = eventlet.wrap_ssl(listener, certfile='/etc/letsencrypt/live/pioasis.duckdns.org/fullchain.pem', keyfile='/etc/letsencrypt/live/pioasis.duckdns.org/privkey.pem')
+
+    # Start the WSGI server with SSL
+    eventlet.wsgi.server(ssl_listener, flask_app)
