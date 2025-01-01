@@ -7,9 +7,8 @@ ADC_ADDRESS = 0x48  # I2C address of ADS7830
 CHANNEL = 0  # ADC channel for the soil moisture sensor
 
 # Calibration values
-DRY_SOIL = 174
-WET_SOIL = 79
-WATER = 63  # Optional (used for reference if needed)
+DRY_SOIL = 240
+WET_SOIL = 76
 
 def read_adc(channel, adc_address=ADC_ADDRESS):
     """
@@ -22,7 +21,7 @@ def read_adc(channel, adc_address=ADC_ADDRESS):
     command = 0x84 | (channel << 4)  # ADS7830 command format
     bus = smbus.SMBus(I2C_BUS)
     bus.write_byte(adc_address, command)
-    raw_value = bus.read_byte(adc_address)
+    raw_value = bus.read_byte(adc_address)  # Read the raw byte value from the ADC
     return raw_value
 
 def convert_to_percentage(raw_value, dry_value=DRY_SOIL, wet_value=WET_SOIL):
@@ -53,6 +52,7 @@ if __name__ == "__main__":
             # Convert to soil moisture percentage
             soil_moisture_percentage = convert_to_percentage(raw_value)
             
+            # Display the raw ADC value and the soil moisture percentage
             print(f"Raw ADC Value: {raw_value}, Soil Moisture: {soil_moisture_percentage}%")
             
             # Wait before the next reading

@@ -10,8 +10,8 @@ veml7700 = None
 
 # Constants
 ADC_ADDRESS = 0x48  # I2C address for ADC
-DRY_SOIL_ADC = 174  # ADC value for dry soil
-WET_SOIL_ADC = 79  # ADC value for wet soil
+DRY_SOIL_ADC = 240  # ADC value for dry soil
+WET_SOIL_ADC = 76  # ADC value for wet soil
 SHT31_ADDRESS = 0x44
 TEMP_COMMAND = [0x2C, 0x06]
 

@@ -4,6 +4,7 @@ import schedule
 import logging
 from datetime import datetime
 import os
+from sensor_utils import read_soil_moisture
 
 # Define relay channel for irrigation
 relay_ch = OutputDevice(24, active_high=False, initial_value=False)
@@ -35,6 +36,22 @@ def water_plants(duration):
     except Exception as e:
         logging.error(f"An error occurred while watering: {e}")
 
+def check_and_water(duration):
+    """
+    Check soil moisture and water plants if needed.
+    :param duration: Duration in seconds for which the pump should run.
+    """
+    try:
+        soil_moisture = read_soil_moisture(channel=0)  # Adjust channel as needed
+        logging.info(f"Current soil moisture: {soil_moisture}%")
+        if soil_moisture < 70.0:
+            logging.info("Soil moisture is below threshold. Watering plants.")
+            water_plants(duration)
+        else:
+            logging.info("Soil moisture is sufficient. No watering needed.")
+    except Exception as e:
+        logging.error(f"Error checking soil moisture: {e}")
+
 def schedule_watering(times, duration):
     """
     Schedule watering tasks at specific times.
@@ -42,12 +59,12 @@ def schedule_watering(times, duration):
     :param duration: Duration in seconds for each watering session.
     """
     for watering_time in times:
-        schedule.every().day.at(watering_time).do(water_plants, duration=duration)
-        logging.info(f"Scheduled watering at {watering_time} for {duration} seconds.")
+        schedule.every().day.at(watering_time).do(check_and_water, duration=duration)
+        logging.info(f"Scheduled watering check at {watering_time} for {duration} seconds if needed.")
 
 if __name__ == "__main__":
     # Define watering schedule and duration
-    watering_times = ["06:00","22:00"]  # Adjust times as needed
+    watering_times = ["06:00", "22:00"]  # Adjust times as needed
     watering_duration = 15  # Duration in seconds for each session
 
     # Schedule watering
