@@ -66,7 +66,7 @@ def schedule_watering(times, duration):
 
 if __name__ == "__main__":
     # Define watering schedule and duration
-    watering_times = ["06:00", "23:10"]  # Adjust times as needed
+    watering_times = ["06:00","13:00", "23:10"]  # Adjust times as needed
     watering_duration = 15  # Duration in seconds for each session
 
     # Schedule watering
