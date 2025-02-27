@@ -1,9 +1,9 @@
 import os
 import time
-import smbus
 import board
 import adafruit_veml7700
 import logging
+from smbus2 import SMBus
 from datetime import datetime
 
 veml7700 = None
@@ -43,7 +43,7 @@ def convert_to_percentage(raw_value, dry_value=DRY_SOIL_ADC, wet_value=WET_SOIL_
 
 # Function to read soil moisture from ADC
 def read_soil_moisture(channel, adc_address=ADC_ADDRESS):
-    bus = smbus.SMBus(1)
+    bus = SMBus(1)
     assert 0 <= channel <= 7, "Invalid ADC channel. Must be between 0 and 7."
     command = 0x84 | (channel << 4)
     bus.write_byte(adc_address, command)
@@ -65,7 +65,7 @@ def get_cpu_temperature():
 # Function to read temperature and humidity from SHT31 sensor
 def read_temperature_humidity():
     try:
-        bus = smbus.SMBus(1)
+        bus = SMBus(1)
         bus.write_i2c_block_data(SHT31_ADDRESS, TEMP_COMMAND[0], [TEMP_COMMAND[1]])
         time.sleep(0.015)
         data = bus.read_i2c_block_data(SHT31_ADDRESS, 0x00, 6)

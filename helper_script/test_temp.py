@@ -1,8 +1,8 @@
-import smbus
+from smbus2 import SMBus
 import time
 
 # Initialize I2C
-bus = smbus.SMBus(1)  # Use I2C bus 1
+bus = SMBus(1)  # Use I2C bus 1
 sht31_address = 0x44  # Default I2C address for SHT31-D
 
 # Function to send a command to the sensor

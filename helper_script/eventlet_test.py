@@ -1,7 +1,7 @@
 import eventlet
 import socketio
-import smbus  # For I2C communication with the ADC
 import time
+from smbus2 import SMBus
 from eventlet.green import os
 
 # Create a Socket.IO server
@@ -34,7 +34,7 @@ def convert_to_percentage(raw_value, dry_value=DRY_SOIL_ADC, wet_value=WET_SOIL_
 # Function to read soil moisture from the ADC
 def read_soil_moisture(channel, adc_address=ADC_ADDRESS):
     try:
-        bus = smbus.SMBus(1)  # Use I2C bus 1
+        bus = SMBus(1)  # Use I2C bus 1
         assert 0 <= channel <= 7, "Invalid ADC channel. Must be between 0 and 7."
         command = 0x84 | (channel << 4)
         bus.write_byte(adc_address, command)
@@ -47,7 +47,7 @@ def read_soil_moisture(channel, adc_address=ADC_ADDRESS):
 # Function to read temperature and humidity from SHT31-D sensor
 def read_temperature_humidity():
     try:
-        bus = smbus.SMBus(1)
+        bus = SMBus(1)
         bus.write_i2c_block_data(SHT31_ADDRESS, TEMP_COMMAND[0], [TEMP_COMMAND[1]])
         time.sleep(0.015)  # Wait for the measurement to complete
         data = bus.read_i2c_block_data(SHT31_ADDRESS, 0x00, 6)

@@ -1,11 +1,11 @@
-import smbus
+from smbus2 import SMBus
 import time
 
 # Define the I2C address of the ADS7830
 ADS7830_ADDRESS = 0x48
 
 # Initialize the I2C bus
-bus = smbus.SMBus(1)  # Use I2C bus 1
+bus = SMBus(1)  # Use I2C bus 1
 
 # Read the ADC channel
 def read_adc(channel):

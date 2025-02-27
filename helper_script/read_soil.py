@@ -1,4 +1,4 @@
-import smbus
+from smbus2 import SMBus
 import time
 
 # Constants
@@ -17,9 +17,15 @@ def read_adc(channel, adc_address=ADC_ADDRESS):
     :param adc_address: I2C address of the ADS7830.
     :return: Raw ADC value (0-255).
     """
+
+    #Add delay to fix I2C issue
+    #  SMBus(1) - Opens i2c bus 1 and read one byte from address 80, offset 0
+    #  If this fails test the connection, try to disconnect and connect again.
+    bus = SMBus(1)
+
     assert 0 <= channel <= 7, "Invalid ADC channel. Must be between 0 and 7."
     command = 0x84 | (channel << 4)  # ADS7830 command format
-    bus = smbus.SMBus(I2C_BUS)
+    bus = SMBus(I2C_BUS)
     bus.write_byte(adc_address, command)
     raw_value = bus.read_byte(adc_address)  # Read the raw byte value from the ADC
     return raw_value

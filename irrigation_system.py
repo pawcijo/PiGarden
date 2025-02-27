@@ -44,7 +44,7 @@ def check_and_water(duration):
     try:
         soil_moisture = read_soil_moisture(channel=0)  # Adjust channel as needed
         logging.info(f"Current soil moisture: {soil_moisture}%")
-        if soil_moisture < 70.0:
+        if soil_moisture < 90.0:
             logging.info("Soil moisture is below threshold. Watering plants.")
             water_plants(duration)
         else:
@@ -59,12 +59,14 @@ def schedule_watering(times, duration):
     :param duration: Duration in seconds for each watering session.
     """
     for watering_time in times:
-        schedule.every().day.at(watering_time).do(check_and_water, duration=duration)
+        # temporary as sensor does not work
+        #schedule.every().day.at(watering_time).do(check_and_water, duration=duration)
+        schedule.every().day.at(watering_time).do(water_plants, duration=duration)
         logging.info(f"Scheduled watering check at {watering_time} for {duration} seconds if needed.")
 
 if __name__ == "__main__":
     # Define watering schedule and duration
-    watering_times = ["06:00", "22:00"]  # Adjust times as needed
+    watering_times = ["06:00", "23:10"]  # Adjust times as needed
     watering_duration = 15  # Duration in seconds for each session
 
     # Schedule watering

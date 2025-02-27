@@ -65,7 +65,7 @@ def control_lights():
                     light_logger.info("Lights turned OFF.")
 
             # Debugging log for time and state
-            light_logger.debug(f"Local time: {local_time}, Light ON: {is_light_on}")
+            #light_logger.debug(f"Local time: {local_time}, Light ON: {is_light_on}")
 
         except Exception as e:
             light_logger.error(f"Error controlling lights: {e}")
