@@ -59,9 +59,9 @@ def schedule_watering(times, duration):
     :param duration: Duration in seconds for each watering session.
     """
     for watering_time in times:
-        # temporary as sensor does not work
-        #schedule.every().day.at(watering_time).do(check_and_water, duration=duration)
-        schedule.every().day.at(watering_time).do(water_plants, duration=duration)
+        schedule.every().day.at(watering_time).do(check_and_water, duration=duration)
+        #version without sensors
+        #schedule.every().day.at(watering_time).do(water_plants, duration=duration)
         logging.info(f"Scheduled watering check at {watering_time} for {duration} seconds if needed.")
 
 if __name__ == "__main__":
